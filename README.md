@@ -2,8 +2,7 @@
 	
 ~~~~~~~~
 sudo updatedb  
-locate PCLConfig  
-	
+locate PCLConfig
 ~~~~~~~~
 copy the directory containing that file  
 run   
