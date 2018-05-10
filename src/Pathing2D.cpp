@@ -1,16 +1,47 @@
 #include <octomap/octomap.h>
-#include <octomap_msgs/Octomap.h>
 #include <octomap_msgs/conversions.h>
-#include <iostream>
 #include <pcl_conversions/pcl_conversions.h>
 #include <ros/ros.h>
+
+#include <octomap_msgs/Octomap.h>
 #include <geometry_msgs/PoseArray.h>
 #include <geometry_msgs/PoseStamped.h>
+#include <geometry_msgs/Point.h>
+
+#include <iostream>
+#include <cmath>
+#include <opencv2/opencv.hpp>
+
+#include <pathing2d/Graph.hpp>
 #include <pathing2d/Histogram.hpp>
 #include <pathing2d/Pathing2D.h>
-#include <opencv2/opencv.hpp>
-#include <geometry_msgs/Point.h>
-#include <pathing2d/Graph.hpp>
+
+cv::Mat circularFilter(int rad) {
+  cv::Mat filter (2*rad, 2*rad, CV_32F);
+  float dist;
+  for (int i=0; i<2*rad; i++) {
+    for (int j=0; j<2*rad; j++) {
+      dist = (i - rad)*(i - rad) + (j - rad)*(j - rad);
+      if (dist < rad*rad) {
+        filter.at<float>(i, j) = 1;
+      } else {
+        // Add soft edges
+        filter.at<float>(i, j) = 0;
+      }
+    }
+  }
+  return filter;
+}
+
+float dist2d(geometry_msgs::Point & a, geometry_msgs::Point & b) {
+   return sqrt((a.x-b.x)*(a.x-b.x) + (a.y-b.y)*(a.y-b.y));
+}
+
+float dist3d(geometry_msgs::Point & a, geometry_msgs::Point & b) {
+   return sqrt((a.x-b.x)*(a.x-b.x) +
+               (a.y-b.y)*(a.y-b.y) +
+               (a.z-b.z)*(a.z-b.z));
+}
 
 void Pathing2D::poseCallback(const geometry_msgs::PoseStamped::ConstPtr& msg) {
 }
@@ -72,9 +103,10 @@ std::vector<WeightedPoint> Pathing2D::openPositions(
     float res)
 {
 
-  // Use convolution of a circle with soft edges with zero padding so only safe points are navigated to
+  // Use convolution of a circle with soft edges with zero padding so only
+  // safe points are navigated to
   // Create circlular filter
-  cv::Mat filter = circularFilter(radius);
+  cv::Mat filter = circularFilter(radius/res);
 
   // Apply exponential function to edgeHistogram to emphasize large obstacles
   // over collections of small obstacles
@@ -83,15 +115,15 @@ std::vector<WeightedPoint> Pathing2D::openPositions(
   // Apply filter
   cv::Mat occupationHist;
   cv::filter2D(exp, occupationHist, -1, filter,
-      cv::Point(-1,-1), 0, BORDER_CONSTANT, dangerOfUnknown);
-  occupationHist /= cv::sum(filter); // Average bumpiness
+      cv::Point(-1,-1), 0, cv::BORDER_CONSTANT);//, dangerOfUnknown);
+  occupationHist = occupationHist * float(cv::sum(filter)[0]); // Average bumpiness
 
   // Create positions filter by threshold
   std::vector<WeightedPoint> openPoses;
-  for (int i=0; i<; i++) {
-    for (int j=0; j<2*rad; j++) {
+  for (int i=0; i<edgeHist.rows; i++) {
+    for (int j=0; j<edgeHist.cols; j++) {
       // Exponentiate threshold to match occupationHist
-      if (occupationHist.at<float>(i, j) < exp(threshold)) {
+      if (occupationHist.at<float>(i, j) < std::exp(maxBumpiness)) {
         WeightedPoint p;
         p.x = j * res;
         p.y = i * res;
@@ -105,28 +137,29 @@ std::vector<WeightedPoint> Pathing2D::openPositions(
   return openPoses;
 }
 
-Graph Pathing2D::buildGraph(
+Graph<float> Pathing2D::buildGraph(
     std::vector<WeightedPoint> & points,
     float roughnessWeight,
     float steepnessWeight,
     float maxSteepness,
-    float maxLength)
+    float maxLength,
+    int maxEdges)
 {
-  Graph g(points.size());
+  Graph<float> g(points.size(), maxEdges);
   // The steepness of an edge is an average of each node's roughnes
   float dist, slope, roughness;
   bool goalWithinHist = (ox < goal.position.x && goal.position.x < mx) &&
                         (oy < goal.position.y && goal.position.y < my);
-  WeightedPoint * p1, p2;
+  WeightedPoint * p1, * p2;
   for (int i=0; i<points.size(); i++) {
     p1 = &points[i];
     // Add goal to each point if goal is within map
     //if (goalWithinHist) {
     if (true) {
-      dist = dist2d(*p1, goal);
-      slope = abs(p1->z-goal.z)/dist;
+      dist = dist2d(*p1, goal.position);
+      slope = abs(p1->z-goal.position.z)/dist;
       if (dist < maxLength && slope < maxSteepness) {
-        g.addEdge(i, j, dist + slope*steepnessWeight + p1->weight*roughnessWeight);
+        g.addEdge(i, points.size(), dist + slope*steepnessWeight + p1->weight*roughnessWeight);
       }
     }
     for (int j=i; j<points.size(); j++) {
@@ -154,25 +187,28 @@ void Pathing2D::process() {
     cv::Mat edgeHist;
 
     //--------- Calculate slope histogram (derivative) ------------
-    cv::GaussianBlur(rawHeight, edgeHist, Size(3,3), 0, 0, BORDER_CONSTANT, dangerOfUnknown);
+    cv::GaussianBlur(rawHeight, edgeHist, cv::Size(3,3), 0, 0,
+        cv::BORDER_CONSTANT);//, dangerOfUnknown);
     /// Generate grad_x and grad_y
     cv::Mat grad_x, grad_y;
     cv::Mat abs_grad_x, abs_grad_y;
 
     /// Gradient X
-    cv::Scharr( edgeHist, grad_x, -1, 1, 0, 3, 1, 0, BORDER_CONSTANT, dangerOfUnknown);
+    cv::Scharr( edgeHist, grad_x, -1, 1, 0, 1, 0,
+        cv::BORDER_CONSTANT);//, dangerOfUnknown);
     cv::convertScaleAbs( grad_x, abs_grad_x );
 
     /// Gradient Y
-    cv::Scharr( edgeHist, grad_y, -1, 0, 1, 3, 1, 0, BORDER_CONSTANT, dangerOfUnknown);
+    cv::Scharr( edgeHist, grad_y, -1, 0, 1, 1, 0,
+        cv::BORDER_CONSTANT);//, dangerOfUnknown);
     cv::convertScaleAbs( grad_y, abs_grad_y );
 
     /// Total Gradient (approximate)
     cv::addWeighted( abs_grad_x, 0.5, abs_grad_y, 0.5, 0, edgeHist );
 
     std::vector<WeightedPoint> open = openPositions(
-        rawHeight, edgeHist, maxBumpiness, robotRadius, dangerOfUnknown, res);
-    Graph g = buildGraph(
-        open, roughnessWeight, steepnessWeight, maxSteepness, robotRadius-1);
-    auto shortestPath = g.shortestPath();
+        rawHeight, edgeHist, maxBumpiness, int(ceil(robotRadius)), dangerOfUnknown, res);
+    Graph<float> g = buildGraph( open, roughnessWeight, steepnessWeight,
+        maxSteepness, robotRadius-1, maxEdges);
+    //auto shortestPath = g.shortestPath(open.size());
 }

@@ -5,7 +5,18 @@
 int main(int argc, char *argv[]) {
   ros::init(argc, argv, "pathing2d");
   ros::NodeHandle n;
-  Pathing2D pather (atof(argv[1]));
+  float res, maxBumpiness, robotRadius, dangerOfUnknown, roughnessWeight, steepnessWeight, maxSteepness;
+  int maxEdges = 5;
+  res = atof(argv[1]);
+  maxBumpiness = 5;
+  robotRadius = 5;
+  dangerOfUnknown = 3;
+  roughnessWeight = 1;
+  steepnessWeight = 1;
+  maxSteepness = .5;
+  Pathing2D pather (res, maxBumpiness, robotRadius,
+                    dangerOfUnknown, roughnessWeight,
+                    steepnessWeight, maxSteepness, maxEdges);
   ros::Subscriber sub1 = n.subscribe("/octomap_binary", 3, &Pathing2D::octomapCallback, &pather);
   ros::Subscriber sub2 = n.subscribe("/goal", 3, &Pathing2D::goalCallback, &pather);
   ros::Subscriber sub3 = n.subscribe("/vehiclePose", 3, &Pathing2D::poseCallback, &pather);
