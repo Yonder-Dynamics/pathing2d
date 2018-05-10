@@ -1,0 +1,5 @@
+<launch>
+  <node name="test_octomap" pkg="octomap_server" type="octomap_server_node" args="$(find pathing2d)/samples/fr_078_tidyup.bt">
+    <param name="max_depth" value="13" />
+  </node>
+</launch>
