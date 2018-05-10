@@ -9,6 +9,7 @@ Copy the directory containing that file and run:
 
 # Todo 
 - Link all nodes to the current position to make sure there is an entry point
+- Figure out how to add constant border when filtering
 - Finish shortest path algo
 - Add orientation to each position
 - Test :)
