@@ -156,19 +156,19 @@ void Pathing2D::process() {
     //--------- Calculate slope histogram (derivative) ------------
     cv::GaussianBlur(rawHeight, edgeHist, Size(3,3), 0, 0, BORDER_CONSTANT, dangerOfUnknown);
     /// Generate grad_x and grad_y
-    Mat grad_x, grad_y;
-    Mat abs_grad_x, abs_grad_y;
+    cv::Mat grad_x, grad_y;
+    cv::Mat abs_grad_x, abs_grad_y;
 
     /// Gradient X
-    Scharr( edgeHist, grad_x, -1, 1, 0, 3, 1, 0, BORDER_CONSTANT, dangerOfUnknown);
-    convertScaleAbs( grad_x, abs_grad_x );
+    cv::Scharr( edgeHist, grad_x, -1, 1, 0, 3, 1, 0, BORDER_CONSTANT, dangerOfUnknown);
+    cv::convertScaleAbs( grad_x, abs_grad_x );
 
     /// Gradient Y
-    Scharr( edgeHist, grad_y, -1, 0, 1, 3, 1, 0, BORDER_CONSTANT, dangerOfUnknown);
-    convertScaleAbs( grad_y, abs_grad_y );
+    cv::Scharr( edgeHist, grad_y, -1, 0, 1, 3, 1, 0, BORDER_CONSTANT, dangerOfUnknown);
+    cv::convertScaleAbs( grad_y, abs_grad_y );
 
     /// Total Gradient (approximate)
-    addWeighted( abs_grad_x, 0.5, abs_grad_y, 0.5, 0, edgeHist );
+    cv::addWeighted( abs_grad_x, 0.5, abs_grad_y, 0.5, 0, edgeHist );
 
     std::vector<WeightedPoint> open = openPositions(
         rawHeight, edgeHist, maxBumpiness, robotRadius, dangerOfUnknown, res);
