@@ -16,7 +16,8 @@ class Graph {
   int maxEdges;
   typedef pair<size_t, T> tpair;
   // array of nodes for which there is an array of their connections
-  priority_queue<tpair> * edges; 
+  //priority_queue<tpair> * edges; 
+  vector<tpair> * edges;
   size_t size;
 
   struct GraphNode {
@@ -41,7 +42,7 @@ class Graph {
 
 template <typename T>
 Graph<T>::Graph(size_t size, int maxEdges) : size(size), maxEdges(maxEdges) {
-  edges = new priority_queue<tpair>[size];
+  edges = new vector<tpair> [size];
 }
 
 template <typename T>
@@ -51,26 +52,18 @@ Graph<T>::~Graph() {
 
 template <typename T>
 void Graph<T>::addEdge(size_t u, size_t v, T w) {
-  edges[u].push(make_pair(v, w));
-  edges[v].push(make_pair(u, w));
+  edges[u].push_back(make_pair(v, w));
+  edges[v].push_back(make_pair(u, w));
   if (maxEdges < edges[u].size() && maxEdges > 0)
-    edges[u].pop();
+    edges[u].pop_back();
   if (maxEdges < edges[v].size() && maxEdges > 0)
-    edges[v].pop();
+    edges[v].pop_back();
 }
 
 template <typename T>
 // Prints shortest paths from src to all other vertices
-std::vector<size_t> Graph<T>::shortestPath(int src)
+std::vector<size_t> Graph<T>::shortestPath(int src1)
 {
-  /*size_t startNode = edges[src].first;
-    unordered_map<size_t, GraphNode> aStarG;
-
-    for (auto it = aStarG.begin(); it != aStarG.end(); it++) {
-    it->second.prev = -1;
-    }
-
-    aStarG[startNode] */
   size_t src = (size_t)src1;
   std::list<size_t> closedSet;
   std::list<size_t> openSet;
@@ -85,8 +78,8 @@ std::vector<size_t> Graph<T>::shortestPath(int src)
   size_t current = src;
 
 
-  for (tpair x : edges[src]) {
-    openSet.insert(openSet.begin(), x.first);
+  for (tpair& x : edges[src]) {
+    openSet.push_back(x.first);
   }
 
   while (!openSet.empty()) {
@@ -99,22 +92,29 @@ std::vector<size_t> Graph<T>::shortestPath(int src)
     current = lowest;
 
     openSet.remove(current);
-    closedSet.insert(closedSet.begin(), current);
+    closedSet.push_back(current);
 
-    for (tpair& x : edges[current]) {
-      if (find(x.first, closedSet.begin(), closedSet.end()) != closedSet.end())
+    for (auto it = edges[current].begin(); it != edges[current].end(); it++) {
+      tpair& x = *it;
+      if (std::find(closedSet.begin(), closedSet.end(),x.first) != closedSet.end())
         continue;
-      if (find(x.first, openSet.begin(), openSet.end()) == openSet.end())
-        openSet.insert(openSet.begin(), x.first);
-      auto it = find(x, edges[current].begin(), edges[current].end());
-      T tentative_score = gScore[current] + it->second;
+      if (std::find(openSet.begin(), openSet.end(), x.first) == openSet.end())
+        openSet.push_back(x.first);
 
-      if (tentative_score >= gScore[x])
+      int found = -1;
+      for (int i = 0; i < edges[current].size(); i++) {
+        if (edges[current].at(i).first == x.first)
+          found = i;
+      }
+
+      T tentative_score = gScore[current] + edges[current].at(found).second;
+
+      if (tentative_score >= gScore[x.first])
         continue;
 
-      cameFrom[x] = current;
-      gScore[x] = tentative_score;
-      fScore[x] = tentative_score + edges[x].at(edges[x].size - 1).second;
+      cameFrom[x.first] = current;
+      gScore[x.first] = tentative_score;
+      fScore[x.first] = tentative_score + edges[x.first].at(edges[x.first].size() - 1).second;
     }
   }
 }
