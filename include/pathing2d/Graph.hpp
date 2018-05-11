@@ -35,8 +35,8 @@ class Graph {
   Graph(size_t size, int maxEdges=-1);
   ~Graph();
   void addEdge(size_t u, size_t v, T w);
-  void shortestPath(int src);
   void reconstruct_path(std::vector<size_t>& cameFrom, size_t current);
+  std::vector<size_t> shortestPath(int src);
 };
 
 template <typename T>
@@ -61,7 +61,7 @@ void Graph<T>::addEdge(size_t u, size_t v, T w) {
 
 template <typename T>
 // Prints shortest paths from src to all other vertices
-void Graph<T>::shortestPath(int src1)
+std::vector<size_t> Graph<T>::shortestPath(int src)
 {
   /*size_t startNode = edges[src].first;
     unordered_map<size_t, GraphNode> aStarG;
@@ -74,7 +74,7 @@ void Graph<T>::shortestPath(int src1)
   size_t src = (size_t)src1;
   std::list<size_t> closedSet;
   std::list<size_t> openSet;
-  closedSet.insert(closedSet.begin(), src);
+  closedSet.push_back(src);
   std::vector<size_t> cameFrom (size*size, 0); // map
   std::vector<T> gScore (size, std::numeric_limits<T>::infinity()); // map
   gScore[src] = 0;
@@ -123,3 +123,7 @@ template <typename T>
 void Graph<T>::reconstruct_path (std::vector<size_t>& cameFrom, size_t current) {
 
 }
+  /*std::vector<size_t> path;
+  path.push_back(1);
+  return path;
+}*/
