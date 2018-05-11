@@ -12,7 +12,7 @@ class Histogram {
     std::vector<T> * get(int x, int y);
     void set(int x, int y, std::vector<T> val);
     void add(int x, int y, T val);
-    cv::Mat findMaxes();
+    void findExtrema(cv::Mat * min, cv::Mat * max, float unknown);
 };
 
 template <typename T>
@@ -39,37 +39,33 @@ void Histogram<T>::add(int x, int y, T val) {
 
 // Row major
 template <typename T>
-cv::Mat Histogram<T>::findMaxes() {
-  cv::Mat out (height, width, CV_32F);
-  std::cout << data.size() << std::endl;
+void Histogram<T>::findExtrema(cv::Mat * min, cv::Mat * max, float unknown) {
+  *min = cv::Mat::zeros(height, width, CV_32F);
+  *max = cv::Mat::zeros(height, width, CV_32F);
   for (int i=0; i<height; i++) {
     for (int j=0; j<width; j++) {
       std::vector<T> * vals = get(i+ox, j+oy);
       //Find max
-      std::cout << vals->size() << std::endl;
       if (vals->size() > 6) {
         // Use inter quartile range then take max value
         std::sort(vals->begin(), vals->end());
         float Q1 = vals->at(int(floor(vals->size() / 4)));
-        float Q3;
-        if (vals->size() % 2) {
-          Q3 = vals->at(int(floor(3*(vals->size()+1) / 4)));
-        } else {
-          Q3 = vals->at(int(floor(3*vals->size() / 4)));
-        }
+        float Q3 = vals->at(int(floor(3*vals->size() / 4)));
         // Max when discarding outliers
-        out.at<float>(i,j) = Q3 + 1.5*(Q3-Q1);
+        max->at<float>(i,j) = Q3 + 1.5*(Q3-Q1);
+        min->at<float>(i,j) = Q1 - 1.5*(Q3-Q1);
       } else if (vals->size() > 0) {
         // Use average
-        T sum;
+        T sum = 0;
         for (T val : *vals) {
           sum += val;
         }
-        out.at<float>(i,j) = sum/vals->size();
+        max->at<float>(i,j) = sum/vals->size();
+        min->at<float>(i,j) = sum/vals->size();
       } else {
-        out.at<float>(i,j) = 9999;
+        max->at<float>(i,j) = unknown;
+        min->at<float>(i,j) = unknown;
       }
     }
   }
-  return out;
 }

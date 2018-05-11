@@ -17,10 +17,11 @@
 #include <pathing2d/Pathing2D.h>
 
 cv::Mat circularFilter(int rad) {
-  cv::Mat filter (2*rad, 2*rad, CV_32F);
+  std::cout << "Rad " << rad << std::endl;
+  cv::Mat filter (2*rad+1, 2*rad+1, CV_32F);
   float dist;
-  for (int i=0; i<2*rad; i++) {
-    for (int j=0; j<2*rad; j++) {
+  for (int i=0; i<2*rad+1; i++) {
+    for (int j=0; j<2*rad+1; j++) {
       dist = (i - rad)*(i - rad) + (j - rad)*(j - rad);
       if (dist < rad*rad) {
         filter.at<float>(i, j) = 1;
@@ -58,17 +59,21 @@ void Pathing2D::octomapCallback(const octomap_msgs::Octomap::ConstPtr& msg) {
   octomap::AbstractOcTree* atree = octomap_msgs::binaryMsgToMap(*msg);
   tree = boost::make_shared<octomap::OcTree>(*(octomap::OcTree *)atree);
   gotOcto = true;
-  if (gotGoal)
+  //if (gotGoal)
     process();
   delete(atree);
-
 }
 
 cv::Mat Pathing2D::processOctomap() {
   tree->getMetricMin(ox, oy, oz);
   tree->getMetricMax(mx, my, mz);
 
-  Histogram<float> h (
+  Histogram<float> occupied (
+      int(ceil((mx-ox)/res)),
+      int(ceil((my-oy)/res)),
+      int(ceil(ox/res)),
+      int(ceil(oy/res)));
+  Histogram<float> empty (
       int(ceil((mx-ox)/res)),
       int(ceil((my-oy)/res)),
       int(ceil(ox/res)),
@@ -77,28 +82,42 @@ cv::Mat Pathing2D::processOctomap() {
     octomath::Vector3 pos = it.getCoordinate();
     int x = int(pos.x()/res);
     int y = int(pos.y()/res);
-    //std::cout << x << "," << y << std::endl;
-    h.add(x, y, pos.z());
+    if (it->getValue() > 0) {
+      occupied.add(x, y, pos.z());
+    } else {
+      empty.add(x, y, pos.z());
+    }
   }
-  cv::Mat hist = h.findMaxes();
-  return hist;
-  /* 
+  cv::Mat occ_min, occ_max;
+  occupied.findExtrema(&occ_min, &occ_max, dangerOfUnknown);
+  std::cout << "OCC "  << mean(occ_max)[0] << std::endl;
+  cv::Mat emp_min, emp_max;
+  empty.findExtrema(&emp_min, &emp_max, dangerOfUnknown);
+  std::cout << "EMP "  << mean(emp_min)[0] << std::endl;
+  cv::Mat hist = cv::min(occ_max, emp_min);
+  std::cout << "Hist " << mean(hist)[0] << std::endl;
+  //cv::Mat hist = occ_max/2 + emp_min/2;
   // Display things
-  std::cout << hist << std::endl;
-  cv::Mat bw;
-  cv::normalize(hist, bw, 0, 255, 32, CV_8UC1);
   cv::namedWindow("Hist", 0);
+  cv::Mat bw;
+  cv::normalize(occ_max, bw, 0, 255, 32, CV_8UC1);
+  cv::imshow("Hist", bw);
+  cv::waitKey(0);
+  cv::normalize(emp_min, bw, 0, 255, 32, CV_8UC1);
+  cv::imshow("Hist", bw);
+  cv::waitKey(0);
+  cv::normalize(hist, bw, 0, 255, 32, CV_8UC1);
   cv::imshow("Hist", bw);
   cv::waitKey(0);
   std::cout << "Done" << std::endl;
-  */
+  return hist;
 }
 
 std::vector<WeightedPoint> Pathing2D::openPositions(
     cv::Mat & heightHist,
     cv::Mat & edgeHist,
     float maxBumpiness,
-    int radius,
+    float radius,
     float dangerOfUnknown,
     float res)
 {
@@ -112,11 +131,26 @@ std::vector<WeightedPoint> Pathing2D::openPositions(
   // over collections of small obstacles
   cv::Mat exp;
   cv::exp(edgeHist, exp);
+  float THRESHOLD = 10;
+  cv::threshold(exp, exp, THRESHOLD, THRESHOLD, 2);
   // Apply filter
   cv::Mat occupationHist;
+  filter /= float(cv::sum(filter)[0]); // Average bumpiness
+  //filter = cv::Mat::ones( 3, 3, CV_32F );
+  // If your filter is too big you will get Nans
+  //cv::filter2D(exp, occupationHist, exp.depth(), filter,
+  //    cv::Point(filter.cols/2-1, filter.rows/2-1), 0, cv::BORDER_CONSTANT);//, dangerOfUnknown);
+  //filter2D(src, dst, ddepth , kernel, anchor, delta, BORDER_CONSTANT );
   cv::filter2D(exp, occupationHist, -1, filter,
-      cv::Point(-1,-1), 0, cv::BORDER_CONSTANT);//, dangerOfUnknown);
-  occupationHist = occupationHist * float(cv::sum(filter)[0]); // Average bumpiness
+      cv::Point(-1, -1), 0, cv::BORDER_CONSTANT);//, dangerOfUnknown);
+  //std::cout << occupationHist << std::endl;
+  //* 
+  cv::Mat bw;
+  cv::normalize(occupationHist, bw, 0, 255, 32, CV_8UC1);
+  cv::namedWindow("Traversable", 0);
+  cv::imshow("Traversable", bw);
+  cv::waitKey(0);
+  //*/
 
   // Create positions filter by threshold
   std::vector<WeightedPoint> openPoses;
@@ -183,32 +217,49 @@ Graph<float> Pathing2D::buildGraph(
 }
 
 void Pathing2D::process() {
-    cv::Mat rawHeight = processOctomap();
-    cv::Mat edgeHist;
+  std::cout << "Creating heightmap" << std::endl;
+  cv::Mat rawHeight = processOctomap();
+  cv::Mat edgeHist;
 
-    //--------- Calculate slope histogram (derivative) ------------
-    cv::GaussianBlur(rawHeight, edgeHist, cv::Size(3,3), 0, 0,
-        cv::BORDER_CONSTANT);//, dangerOfUnknown);
-    /// Generate grad_x and grad_y
-    cv::Mat grad_x, grad_y;
-    cv::Mat abs_grad_x, abs_grad_y;
+  std::cout << "Running Scharr" << std::endl;
+  //--------- Calculate slope histogram (derivative) ------------
+  // Processing
+  
+  cv::medianBlur (rawHeight, edgeHist, 3);
+  cv::pyrDown(rawHeight, edgeHist);
+  //cv::GaussianBlur(edgeHist, edgeHist, cv::Size(3,3), 0, 0,
+  //    cv::BORDER_CONSTANT);//, dangerOfUnknown);
 
-    /// Gradient X
-    cv::Scharr( edgeHist, grad_x, -1, 1, 0, 1, 0,
-        cv::BORDER_CONSTANT);//, dangerOfUnknown);
-    cv::convertScaleAbs( grad_x, abs_grad_x );
+  cv::Mat bw;
+  cv::normalize(edgeHist, bw, 0, 255, 32, CV_8UC1);
+  cv::namedWindow("Blur", 0);
+  cv::imshow("Blur", bw);
+  cv::waitKey(0);
+  /// Generate grad_x and grad_y
+  cv::Mat grad_x, grad_y;
+  cv::Mat abs_grad_x, abs_grad_y;
 
-    /// Gradient Y
-    cv::Scharr( edgeHist, grad_y, -1, 0, 1, 1, 0,
-        cv::BORDER_CONSTANT);//, dangerOfUnknown);
-    cv::convertScaleAbs( grad_y, abs_grad_y );
+  /// Gradient X
+  cv::Scharr( edgeHist, grad_x, -1, 1, 0, 1, 0,
+      cv::BORDER_CONSTANT);//, dangerOfUnknown);
+  //cv::convertScaleAbs( grad_x, abs_grad_x );
 
-    /// Total Gradient (approximate)
-    cv::addWeighted( abs_grad_x, 0.5, abs_grad_y, 0.5, 0, edgeHist );
+  /// Gradient Y
+  cv::Scharr( edgeHist, grad_y, -1, 0, 1, 1, 0,
+      cv::BORDER_CONSTANT);//, dangerOfUnknown);
+  //cv::convertScaleAbs( grad_y, abs_grad_y );
 
-    std::vector<WeightedPoint> open = openPositions(
-        rawHeight, edgeHist, maxBumpiness, int(ceil(robotRadius)), dangerOfUnknown, res);
-    Graph<float> g = buildGraph( open, roughnessWeight, steepnessWeight,
-        maxSteepness, robotRadius-1, maxEdges);
-    //auto shortestPath = g.shortestPath(open.size());
+  /// Total Gradient (approximate)
+  cv::addWeighted( grad_x, 0.5, grad_y, 0.5, 0, edgeHist, -1);
+  float avg = float(cv::sum(edgeHist)[0])/edgeHist.rows/edgeHist.cols;
+  edgeHist = cv::abs(edgeHist - avg);
+
+  std::cout << "Finding open positions" << std::endl;
+  std::vector<WeightedPoint> open = openPositions(
+      rawHeight, edgeHist, maxBumpiness, robotRadius, dangerOfUnknown, res);
+  std::cout << "Building graph" << std::endl;
+  Graph<float> g = buildGraph( open, roughnessWeight, steepnessWeight,
+      maxSteepness, robotRadius-1, maxEdges);
+  std::cout << "Done" << std::endl;
+  //auto shortestPath = g.shortestPath(open.size());
 }

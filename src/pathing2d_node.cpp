@@ -7,10 +7,10 @@ int main(int argc, char *argv[]) {
   ros::NodeHandle n;
   float res, maxBumpiness, robotRadius, dangerOfUnknown, roughnessWeight, steepnessWeight, maxSteepness;
   int maxEdges = 5;
-  res = atof(argv[1]);
+  res = .05;
   maxBumpiness = 5;
-  robotRadius = 5;
-  dangerOfUnknown = 3;
+  robotRadius = .15;
+  dangerOfUnknown = 2;
   roughnessWeight = 1;
   steepnessWeight = 1;
   maxSteepness = .5;

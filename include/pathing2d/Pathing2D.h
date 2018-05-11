@@ -56,7 +56,7 @@ class Pathing2D {
         // threshold for maximum amount of edges
         float maxBumpiness,
         // Radius to check around points for occupation
-        int radius,
+        float radius,
         // bumpiness of unknown things, basically how much to avoid unknown parts of map
         float dangerOfUnknown,
         // Resolution of histogram, ie coords in hist*res = coords in world

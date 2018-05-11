@@ -28,7 +28,7 @@ Graph<T>::Graph(size_t size, int maxEdges) : size(size), maxEdges(maxEdges) {
 
 template <typename T>
 Graph<T>::~Graph() {
-  delete edges;
+  delete[] edges;
 }
 
 template <typename T>
