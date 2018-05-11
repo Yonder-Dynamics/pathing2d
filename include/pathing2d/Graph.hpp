@@ -5,8 +5,11 @@
 #include <list>
 #include <utility>
 #include <limits>
+#include <unordered_map>
 
 using namespace std;
+
+
 
 template <typename T>
 class Graph {
@@ -15,11 +18,25 @@ class Graph {
   // array of nodes for which there is an array of their connections
   priority_queue<tpair> * edges; 
   size_t size;
+
+  struct GraphNode {
+    size_t id;
+    vector<size_t> connection;
+    size_t prev;
+    T value;
+    T dist;
+
+    void addConnection(size_t v) {
+      connection.push_back(v);
+    };
+  };
+
   public:
   Graph(size_t size, int maxEdges=-1);
   ~Graph();
   void addEdge(size_t u, size_t v, T w);
   void shortestPath(int src);
+  void reconstruct_path(std::vector<size_t>& cameFrom, size_t current);
 };
 
 template <typename T>
@@ -41,78 +58,68 @@ void Graph<T>::addEdge(size_t u, size_t v, T w) {
   if (maxEdges < edges[v].size() && maxEdges > 0)
     edges[v].pop();
 }
- 
+
 template <typename T>
 // Prints shortest paths from src to all other vertices
-void Graph<T>::shortestPath(int src)
+void Graph<T>::shortestPath(int src1)
 {
+  /*size_t startNode = edges[src].first;
+    unordered_map<size_t, GraphNode> aStarG;
+
+    for (auto it = aStarG.begin(); it != aStarG.end(); it++) {
+    it->second.prev = -1;
+    }
+
+    aStarG[startNode] */
+  size_t src = (size_t)src1;
   std::list<size_t> closedSet;
   std::list<size_t> openSet;
-  openSet.push(src);
+  closedSet.insert(closedSet.begin(), src);
   std::vector<size_t> cameFrom (size*size, 0); // map
-  std::vector<size_t> gScore (size, std::numeric_limits<T>::infinity()); // map
+  std::vector<T> gScore (size, std::numeric_limits<T>::infinity()); // map
   gScore[src] = 0;
-  std::vector<size_t> fScore (size, std::numeric_limits<T>::infinity()); // map
+  std::vector<T> fScore (size, std::numeric_limits<T>::infinity()); // map
   fScore[src] = 0;
-/*
-function A*(start, goal)
-    // The set of nodes already evaluated
-    closedSet := {}
 
-    // The set of currently discovered nodes that are not evaluated yet.
-    // Initially, only the start node is known.
-    openSet := {start}
+  //Heuristic estimate
+  size_t current = src;
 
-    // For each node, which node it can most efficiently be reached from.
-    // If a node can be reached from many nodes, cameFrom will eventually contain the
-    // most efficient previous step.
-    cameFrom := an empty map
 
-    // For each node, the cost of getting from the start node to that node.
-    gScore := map with default value of Infinity
+  for (tpair x : edges[src]) {
+    openSet.insert(openSet.begin(), x.first);
+  }
 
-    // The cost of going from start to start is zero.
-    gScore[start] := 0
+  while (!openSet.empty()) {
+    //Choose lowest fScore from openSet
+    size_t lowest;
+    for (size_t x : openSet) {
+      if (fScore[x] <= fScore[lowest])
+        lowest = x;
+    }
+    current = lowest;
 
-    // For each node, the total cost of getting from the start node to the goal
-    // by passing by that node. That value is partly known, partly heuristic.
-    fScore := map with default value of Infinity
+    openSet.remove(current);
+    closedSet.insert(closedSet.begin(), current);
 
-    // For the first node, that value is completely heuristic.
-    fScore[start] := heuristic_cost_estimate(start, goal)
+    for (tpair& x : edges[current]) {
+      if (find(x.first, closedSet.begin(), closedSet.end()) != closedSet.end())
+        continue;
+      if (find(x.first, openSet.begin(), openSet.end()) == openSet.end())
+        openSet.insert(openSet.begin(), x.first);
+      auto it = find(x, edges[current].begin(), edges[current].end());
+      T tentative_score = gScore[current] + it->second;
 
-    while openSet is not empty
-        current := the node in openSet having the lowest fScore[] value
-        if current = goal
-            return reconstruct_path(cameFrom, current)
+      if (tentative_score >= gScore[x])
+        continue;
 
-        openSet.Remove(current)
-        closedSet.Add(current)
+      cameFrom[x] = current;
+      gScore[x] = tentative_score;
+      fScore[x] = tentative_score + edges[x].at(edges[x].size - 1).second;
+    }
+  }
+}
 
-        for each neighbor of current
-            if neighbor in closedSet
-                continue		// Ignore the neighbor which is already evaluated.
+template <typename T>
+void Graph<T>::reconstruct_path (std::vector<size_t>& cameFrom, size_t current) {
 
-            if neighbor not in openSet	// Discover a new node
-                openSet.Add(neighbor)
-            
-            // The distance from start to a neighbor
-            //the "dist_between" function may vary as per the solution requirements.
-            tentative_gScore := gScore[current] + dist_between(current, neighbor)
-            if tentative_gScore >= gScore[neighbor]
-                continue		// This is not a better path.
-
-            // This path is the best until now. Record it!
-            cameFrom[neighbor] := current
-            gScore[neighbor] := tentative_gScore
-            fScore[neighbor] := gScore[neighbor] + heuristic_cost_estimate(neighbor, goal) 
-
-    return failure
-
-function reconstruct_path(cameFrom, current)
-    total_path := [current]
-    while current in cameFrom.Keys:
-        current := cameFrom[current]
-        total_path.append(current)
-    return total_path
-*/
+}
