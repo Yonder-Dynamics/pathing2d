@@ -8,15 +8,15 @@ int main(int argc, char *argv[]) {
   float res, maxBumpiness, robotRadius, dangerOfUnknown, roughnessWeight, steepnessWeight, maxSteepness;
   int maxEdges = 5;
   res = .05;
-  maxBumpiness = 5;
+  maxBumpiness = 3;
   robotRadius = .15;
-  dangerOfUnknown = 2;
+  dangerOfUnknown = 100; // use high value to prevent all unknown locations from being checked
   roughnessWeight = .5;
   steepnessWeight = 1;
   maxSteepness = 10;
-  Pathing2D pather (res, maxBumpiness, robotRadius,
+  Pathing2D pather (n, res, maxBumpiness, robotRadius,
                     dangerOfUnknown, roughnessWeight,
-                    steepnessWeight, maxSteepness, maxEdges);
+                    steepnessWeight, maxSteepness, maxEdges, "map");
   ros::Subscriber sub1 = n.subscribe("/octomap_binary", 3, &Pathing2D::octomapCallback, &pather);
   ros::Subscriber sub2 = n.subscribe("/goal", 3, &Pathing2D::goalCallback, &pather);
   ros::Subscriber sub3 = n.subscribe("/vehiclePose", 3, &Pathing2D::poseCallback, &pather);

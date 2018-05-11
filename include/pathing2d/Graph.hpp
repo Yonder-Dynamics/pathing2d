@@ -19,7 +19,7 @@ class Graph {
   Graph(size_t size, int maxEdges=-1);
   ~Graph();
   void addEdge(size_t u, size_t v, T w);
-  void shortestPath(int src);
+  std::vector<size_t> shortestPath(int src);
 };
 
 template <typename T>
@@ -44,16 +44,20 @@ void Graph<T>::addEdge(size_t u, size_t v, T w) {
  
 template <typename T>
 // Prints shortest paths from src to all other vertices
-void Graph<T>::shortestPath(int src)
+std::vector<size_t> Graph<T>::shortestPath(int src)
 {
   std::list<size_t> closedSet;
   std::list<size_t> openSet;
-  openSet.push(src);
+  openSet.push_back(src);
   std::vector<size_t> cameFrom (size*size, 0); // map
   std::vector<size_t> gScore (size, std::numeric_limits<T>::infinity()); // map
   gScore[src] = 0;
   std::vector<size_t> fScore (size, std::numeric_limits<T>::infinity()); // map
   fScore[src] = 0;
+  std::vector<size_t> path;
+  path.push_back(1);
+  return path;
+}
 /*
 function A*(start, goal)
     // The set of nodes already evaluated
