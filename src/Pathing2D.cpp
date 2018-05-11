@@ -324,7 +324,7 @@ nav_msgs::OccupancyGrid Pathing2D::cvToGrid(cv::Mat & mat) {
 
   for (int i=0; i<mat.rows; i++) {
     for (int j=0; j<mat.cols; j++) {
-      grid.data[(mat.rows-i-1)*mat.cols+j] = intmat.at<uint8_t>(i, j);
+      grid.data[(mat.rows-i-1)*mat.cols+(mat.cols-j-1)] = intmat.at<uint8_t>(i, j);
     }
   }
 
@@ -333,5 +333,8 @@ nav_msgs::OccupancyGrid Pathing2D::cvToGrid(cv::Mat & mat) {
   grid.info.width = mat.cols;
   grid.info.height = mat.rows;
   grid.info.resolution = res;
+  grid.info.origin.position.x = ox;
+  grid.info.origin.position.y = oy;
+  grid.info.origin.position.z = oz;
   return grid;
 }
