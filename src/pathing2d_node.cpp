@@ -11,9 +11,9 @@ int main(int argc, char *argv[]) {
   maxBumpiness = 5;
   robotRadius = .15;
   dangerOfUnknown = 2;
-  roughnessWeight = 1;
+  roughnessWeight = .5;
   steepnessWeight = 1;
-  maxSteepness = .5;
+  maxSteepness = 10;
   Pathing2D pather (res, maxBumpiness, robotRadius,
                     dangerOfUnknown, roughnessWeight,
                     steepnessWeight, maxSteepness, maxEdges);

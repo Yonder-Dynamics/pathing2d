@@ -130,9 +130,9 @@ std::vector<WeightedPoint> Pathing2D::openPositions(
   // Apply exponential function to edgeHistogram to emphasize large obstacles
   // over collections of small obstacles
   cv::Mat exp;
-  cv::exp(edgeHist, exp);
+  //cv::exp(edgeHist, exp);
   float THRESHOLD = 10;
-  cv::threshold(exp, exp, THRESHOLD, THRESHOLD, 2);
+  cv::threshold(edgeHist, exp, THRESHOLD, THRESHOLD, 2);
   // Apply filter
   cv::Mat occupationHist;
   filter /= float(cv::sum(filter)[0]); // Average bumpiness
@@ -225,10 +225,9 @@ void Pathing2D::process() {
   //--------- Calculate slope histogram (derivative) ------------
   // Processing
   
-  cv::medianBlur (rawHeight, edgeHist, 3);
-  cv::pyrDown(rawHeight, edgeHist);
-  //cv::GaussianBlur(edgeHist, edgeHist, cv::Size(3,3), 0, 0,
-  //    cv::BORDER_CONSTANT);//, dangerOfUnknown);
+  //cv::medianBlur (rawHeight, edgeHist, 5);
+  cv::GaussianBlur(rawHeight, edgeHist, cv::Size(5,5), 10, 10,
+      cv::BORDER_CONSTANT);//, dangerOfUnknown);
 
   cv::Mat bw;
   cv::normalize(edgeHist, bw, 0, 255, 32, CV_8UC1);
@@ -240,12 +239,12 @@ void Pathing2D::process() {
   cv::Mat abs_grad_x, abs_grad_y;
 
   /// Gradient X
-  cv::Scharr( edgeHist, grad_x, -1, 1, 0, 1, 0,
+  cv::Sobel( edgeHist, grad_x, -1, 1, 0, 5, 1, 0,
       cv::BORDER_CONSTANT);//, dangerOfUnknown);
   //cv::convertScaleAbs( grad_x, abs_grad_x );
 
   /// Gradient Y
-  cv::Scharr( edgeHist, grad_y, -1, 0, 1, 1, 0,
+  cv::Sobel( edgeHist, grad_y, -1, 0, 1, 5, 1, 0,
       cv::BORDER_CONSTANT);//, dangerOfUnknown);
   //cv::convertScaleAbs( grad_y, abs_grad_y );
 

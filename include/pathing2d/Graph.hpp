@@ -4,6 +4,7 @@
 #include <vector>
 #include <list>
 #include <utility>
+#include <limits>
 
 using namespace std;
 
@@ -45,58 +46,73 @@ template <typename T>
 // Prints shortest paths from src to all other vertices
 void Graph<T>::shortestPath(int src)
 {
-  /*
-  // Create a priority queue to store vertices that
-  // are being preprocessed. This is weird syntax in C++.
-  // Refer below link for details of this syntax
-  // http://geeksquiz.com/implement-min-heap-using-stl/
-  priority_queue< iPair, vector <iPair> , greater<iPair> > pq;
+  std::list<size_t> closedSet;
+  std::list<size_t> openSet;
+  openSet.push(src);
+  std::vector<size_t> cameFrom (size*size, 0); // map
+  std::vector<size_t> gScore (size, std::numeric_limits<T>::infinity()); // map
+  gScore[src] = 0;
+  std::vector<size_t> fScore (size, std::numeric_limits<T>::infinity()); // map
+  fScore[src] = 0;
+/*
+function A*(start, goal)
+    // The set of nodes already evaluated
+    closedSet := {}
 
-  // Create a vector for distances and initialize all
-  // distances as infinite (INF)
-  vector<int> dist(V, INF);
+    // The set of currently discovered nodes that are not evaluated yet.
+    // Initially, only the start node is known.
+    openSet := {start}
 
-  // Insert source itself in priority queue and initialize
-  // its distance as 0.
-  pq.push(make_pair(0, src));
-  dist[src] = 0;
+    // For each node, which node it can most efficiently be reached from.
+    // If a node can be reached from many nodes, cameFrom will eventually contain the
+    // most efficient previous step.
+    cameFrom := an empty map
 
-  // Looping till priority queue becomes empty (or all
-  // distances are not finalized)
-  while (!pq.empty())
-  {
-      // The first vertex in pair is the minimum distance
-      // vertex, extract it from priority queue.
-      // vertex label is stored in second of pair (it
-      // has to be done this way to keep the vertices
-      // sorted distance (distance must be first item
-      // in pair)
-      int u = pq.top().second;
-      pq.pop();
+    // For each node, the cost of getting from the start node to that node.
+    gScore := map with default value of Infinity
 
-      // 'i' is used to get all adjacent vertices of a vertex
-      list< pair<int, int> >::iterator i;
-      for (i = adj[u].begin(); i != adj[u].end(); ++i)
-      {
-          // Get vertex label and weight of current adjacent
-          // of u.
-          int v = (*i).first;
-          int weight = (*i).second;
+    // The cost of going from start to start is zero.
+    gScore[start] := 0
 
-          //  If there is shorted path to v through u.
-          if (dist[v] > dist[u] + weight)
-          {
-              // Updating distance of v
-              dist[v] = dist[u] + weight;
-              pq.push(make_pair(dist[v], v));
-          }
-      }
-  }
+    // For each node, the total cost of getting from the start node to the goal
+    // by passing by that node. That value is partly known, partly heuristic.
+    fScore := map with default value of Infinity
 
-  // Print shortest distances stored in dist[]
-  printf("Vertex   Distance from Source\n");
-  for (int i = 0; i < V; ++i)
-      printf("%d \t\t %d\n", i, dist[i]);
-  */
-}
+    // For the first node, that value is completely heuristic.
+    fScore[start] := heuristic_cost_estimate(start, goal)
 
+    while openSet is not empty
+        current := the node in openSet having the lowest fScore[] value
+        if current = goal
+            return reconstruct_path(cameFrom, current)
+
+        openSet.Remove(current)
+        closedSet.Add(current)
+
+        for each neighbor of current
+            if neighbor in closedSet
+                continue		// Ignore the neighbor which is already evaluated.
+
+            if neighbor not in openSet	// Discover a new node
+                openSet.Add(neighbor)
+            
+            // The distance from start to a neighbor
+            //the "dist_between" function may vary as per the solution requirements.
+            tentative_gScore := gScore[current] + dist_between(current, neighbor)
+            if tentative_gScore >= gScore[neighbor]
+                continue		// This is not a better path.
+
+            // This path is the best until now. Record it!
+            cameFrom[neighbor] := current
+            gScore[neighbor] := tentative_gScore
+            fScore[neighbor] := gScore[neighbor] + heuristic_cost_estimate(neighbor, goal) 
+
+    return failure
+
+function reconstruct_path(cameFrom, current)
+    total_path := [current]
+    while current in cameFrom.Keys:
+        current := cameFrom[current]
+        total_path.append(current)
+    return total_path
+*/
