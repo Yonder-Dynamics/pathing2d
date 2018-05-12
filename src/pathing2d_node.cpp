@@ -2,18 +2,27 @@
 #include <ros/ros.h>
 #include <pathing2d/Pathing2D.h>
 
+
 int main(int argc, char *argv[]) {
   ros::init(argc, argv, "pathing2d");
   ros::NodeHandle n;
   float res, maxBumpiness, robotRadius, dangerOfUnknown, roughnessWeight, steepnessWeight, maxSteepness;
-  int maxEdges = 5;
-  res = .05;
+  int maxEdges; 
+  n.getParam("maxEdge", maxEdges);
+  n.getParam("resolution", res);
+  n.getParam("maxBump", maxBumpiness);
+  n.getParam("robotRadius", robotRadius);
+  n.getParam("dangerOfUnknown", dangerOfUnknown);
+  n.getParam("roughnessWeight", roughnessWeight);
+  n.getParam("steepnessWeight", steepnessWeight);
+  n.getParam("maxSteepness", maxSteepness);
+  /*res = .05;
   maxBumpiness = 3;
   robotRadius = .15;
   dangerOfUnknown = 100; // use high value to prevent all unknown locations from being checked
   roughnessWeight = .5;
   steepnessWeight = 1;
-  maxSteepness = 10;
+  maxSteepness = 10;*/
   Pathing2D pather (n, res, maxBumpiness, robotRadius,
                     dangerOfUnknown, roughnessWeight,
                     steepnessWeight, maxSteepness, maxEdges, "map");

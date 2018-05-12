@@ -1,0 +1,8 @@
+<param name="resolution" value="0.05"/>
+<param name="maxEdge" value="100"/>
+<param name="steepnessWeight" value="10"/>
+<param name="maxSteepness" value="1"/>
+<param name="roughnessWeight" value="0.1"/>
+<param name="dangerOfUnknown" value="100"/>
+<param name="robotRadius" value="0.15"/>
+<param name="maxBumpiness" value="3"/>
