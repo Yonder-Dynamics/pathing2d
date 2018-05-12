@@ -27,13 +27,12 @@ int main() {
   g.addEdge(1, 3, 1);
   g.addEdge(3, 4, 0);
   g.addEdge(4, 5, 2);
-  g.addEdge(3, 5, 1);
+  g.addEdge(3, 5, 9);
   g.addEdge(3, 2, 0);
   g.addEdge(1, 4, 5);
  
 
   auto results = g.shortestPath(0, 5, points);
-  std::cout << results.size() << std::endl;
   for (auto it = results.begin(); it != results.end(); it++)
     std::cout << *it << std::endl;
 

@@ -11,6 +11,15 @@
 using namespace std;
 
 template <typename T>
+class Compare {
+  typedef pair<size_t, T> tpair;
+  public:
+    bool operator() (tpair & a, tpair & b) {
+      return a.second > b.second;
+    }
+};
+
+template <typename T>
 class Graph {
   int maxEdges;
   typedef pair<size_t, T> tpair;
@@ -19,7 +28,7 @@ class Graph {
   //vector<tpair> * edges;
   size_t size;
 
-  
+
   public:
   Graph(size_t size, int maxEdges=-1);
   ~Graph();
@@ -53,49 +62,50 @@ void Graph<T>::addEdge(size_t u, size_t v, T w) {
 //template <typename T>
 /*void makeRandom(size_t width,size_t height){
   int cost_max = 20;
-  #define NODE_T int
+#define NODE_T int
 
-  //build a table of NODE_T
-  NODE_T** table = malloc(sizeof(NODE_T*)*width);
-  int i;
-  for(i=0;i<width;i++){
-    table[i] = malloc(sizeof(NODE_T)*height);
-  }
-  int j;
+//build a table of NODE_T
+NODE_T** table = malloc(sizeof(NODE_T*)*width);
+int i;
+for(i=0;i<width;i++){
+table[i] = malloc(sizeof(NODE_T)*height);
+}
+int j;
 
-  //assign flattened table index as node id
-  for(i=0;i<width;i++){
-    for(j=0;j<height;j++){
-      table[i][j] = i + j*i;
-    }
-  }
+//assign flattened table index as node id
+for(i=0;i<width;i++){
+for(j=0;j<height;j++){
+table[i][j] = i + j*i;
+}
+}
 
-  //link adjacent table indices
-  for(i=0;i<width;i++){
-    for(j=0;j<height;j++){
-      *//*
-      if(i != 0){
-        this.addEdge(table[i][j],table[i-1][j],1);
-      }
-      if(j != 0){
-        this.addEdge(table[i][j],table[i][j-1],1);
-      }
-      
-      if(i != width-1){
-        this.addEdge(table[i][j],table[i+1][j],1);
-      }
-      if(j != height-1){
-        this.addEdge(table[i][j],table[i][j+1],1);
-      }
-    }
-  }
-}*/
+//link adjacent table indices
+for(i=0;i<width;i++){
+for(j=0;j<height;j++){
+*//*
+     if(i != 0){
+     this.addEdge(table[i][j],table[i-1][j],1);
+     }
+     if(j != 0){
+     this.addEdge(table[i][j],table[i][j-1],1);
+     }
+
+     if(i != width-1){
+     this.addEdge(table[i][j],table[i+1][j],1);
+     }
+     if(j != height-1){
+     this.addEdge(table[i][j],table[i][j+1],1);
+     }
+     }
+     }
+     }*/
 
 template <typename T>
 T Graph<T>::heuristic(size_t src, size_t goal, std::vector<WeightedPoint> & points) {
   // Gives an approximation of how far src is from goal
   return dist3d(points[src], points[goal]);
 }
+
 
 template <typename T>
 // Prints shortest paths from src to all other vertices
@@ -106,12 +116,12 @@ std::vector<size_t> Graph<T>::shortestPath(size_t src, size_t goal,
   // Initially, only the start node is known.
   //std::list<size_t> openSet;
   //openSet.push_back(src);
-  priority_queue<tpair, std::vector<tpair>, std::greater<tpair> > openSet;
+  priority_queue<tpair, std::vector<tpair>, Compare<T> > openSet;
   openSet.push(make_pair(src, heuristic(src, goal, points)));
 
   // The set of nodes already evaluated
   std::list<size_t> closedSet;
-  priority_queue<tpair, std::vector<tpair>, std::greater<tpair> > closedSetQ;
+  priority_queue<tpair, std::vector<tpair>, Compare<T> > closedSetQ;
 
   // For each node, which node it can most efficiently be reached from.
   // If a node can be reached from many nodes, cameFrom will eventually contain the
@@ -119,7 +129,7 @@ std::vector<size_t> Graph<T>::shortestPath(size_t src, size_t goal,
   std::vector<size_t> cameFrom (size, -1);
 
   // For each node, the cost of getting from the start node to that node.
-  std::vector<T> gScore (size, std::numeric_limits<T>::infinity());
+  std::vector<T> gScore (size, std::numeric_limits<T>::max());
   // The cost of going from start to start is zero.
   gScore[src] = 0;
 
@@ -133,23 +143,23 @@ std::vector<size_t> Graph<T>::shortestPath(size_t src, size_t goal,
   size_t current = openSet.top().first;
 
   /*
-  for (tpair& x : edges[src]) {
-    openSet.push_back(x.first);
-  }
-  */
+     for (tpair& x : edges[src]) {
+     openSet.push_back(x.first);
+     }
+     */
 
   while (!openSet.empty()) {
     //Choose lowest fScore from openSet (need to use priority queue here)
     /*
-    size_t lowest;
-    for (size_t x : openSet) {
-      if (fScore[x] <= fScore[lowest])
-        lowest = x;
-    }
-    current = lowest;
+       size_t lowest;
+       for (size_t x : openSet) {
+       if (fScore[x] <= fScore[lowest])
+       lowest = x;
+       }
+       current = lowest;
 
-    openSet.remove(current);
-    */
+       openSet.remove(current);
+       */
     current = openSet.top().first;
     closedSet.push_back(current);
     closedSetQ.push(openSet.top());
@@ -171,7 +181,7 @@ std::vector<size_t> Graph<T>::shortestPath(size_t src, size_t goal,
       // Add to open set if not yet evaluated. Technically unnecessary as we
       // will never reprocess the same point thanks to closed set
       //if (std::find(openSet.begin(), openSet.end(), x.first) == openSet.end())
-        //openSet.push_back(x.first);
+      //openSet.push_back(x.first);
 
       /// Then assign that node a gScore based on current distance and
       /// distance from that node to current
@@ -180,8 +190,8 @@ std::vector<size_t> Graph<T>::shortestPath(size_t src, size_t goal,
       // Search for the distance
       int found = -1;
       for (int i = 0; i < edges[current].size(); i++) {
-        if (edges[current].at(i).first == x.first)
-          found = i;
+      if (edges[current].at(i).first == x.first)
+      found = i;
       }
       T tentative_score = gScore[current] + edges[current].at(found).second;
       */
@@ -200,16 +210,16 @@ std::vector<size_t> Graph<T>::shortestPath(size_t src, size_t goal,
   }
   current = closedSetQ.top().first;
   return reconstruct_path(cameFrom, current);
-}
-
-template <typename T>
-std::vector<size_t> Graph<T>::reconstruct_path (std::vector<size_t>& cameFrom, size_t current) {
-  std::vector<size_t> path;
-  path.push_back(current);
-  while (cameFrom[current] != -1) {
-    // Add to the path the shortest path to current and set current to the previous node
-    current = cameFrom[current];
-    path.insert(path.begin(), current);
   }
-  return path;
-}
+
+  template <typename T>
+    std::vector<size_t> Graph<T>::reconstruct_path (std::vector<size_t>& cameFrom, size_t current) {
+      std::vector<size_t> path;
+      path.push_back(current);
+      while (cameFrom[current] != size_t(-1)) {
+        // Add to the path the shortest path to current and set current to the previous node
+        current = cameFrom[current];
+        path.insert(path.begin(), current);
+      }
+      return path;
+    }
