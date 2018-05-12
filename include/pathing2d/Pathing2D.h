@@ -56,7 +56,7 @@ class Pathing2D {
         const std::vector<WeightedPoint> & nodes);
 
     void process();
-    cv::Mat processOctomap();
+    cv::Mat processOctomap(cv::Mat * unknown);
 
     Graph<float> buildGraph(
         const cv::Mat & heightHist,
@@ -70,5 +70,5 @@ class Pathing2D {
         float maxLength,
         int maxEdges);
 
-    nav_msgs::OccupancyGrid cvToGrid(cv::Mat & mat);
+    nav_msgs::OccupancyGrid cvToGrid(const  cv::Mat & mat);
 };

@@ -123,6 +123,10 @@ std::vector<size_t> Graph<T>::shortestPath(size_t src, size_t goal,
     openSet.pop();
     closedSet.push_back(current);
 
+    if (current == goal) {
+      return reconstruct_path(cameFrom, current);
+    }
+
     // Search the neighbors of current
     //for (auto it = edges[current].begin(); it != edges[current].end(); it++) {
     //  tpair& x = *it;
@@ -162,7 +166,8 @@ std::vector<size_t> Graph<T>::shortestPath(size_t src, size_t goal,
       openSet.push(make_pair(x.first, tentative_score + heuristic(x.first, goal, points)));
     }
   }
-  return reconstruct_path(cameFrom, current);
+  std::vector<size_t> emp;
+  return emp;
 }
 
 template <typename T>
