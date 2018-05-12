@@ -81,6 +81,7 @@ std::vector<size_t> Graph<T>::shortestPath(size_t src, size_t goal,
 
   // The set of nodes already evaluated
   std::list<size_t> closedSet;
+  priority_queue<tpair, std::vector<tpair>, std::greater<tpair> > closedSetQ;
 
   // For each node, which node it can most efficiently be reached from.
   // If a node can be reached from many nodes, cameFrom will eventually contain the
@@ -120,8 +121,9 @@ std::vector<size_t> Graph<T>::shortestPath(size_t src, size_t goal,
     openSet.remove(current);
     */
     current = openSet.top().first;
-    openSet.pop();
     closedSet.push_back(current);
+    closedSetQ.push(openSet.top());
+    openSet.pop();
 
     if (current == goal) {
       return reconstruct_path(cameFrom, current);
@@ -166,8 +168,8 @@ std::vector<size_t> Graph<T>::shortestPath(size_t src, size_t goal,
       openSet.push(make_pair(x.first, tentative_score + heuristic(x.first, goal, points)));
     }
   }
-  std::vector<size_t> emp;
-  return emp;
+  current = closedSetQ.top().first;
+  return reconstruct_path(cameFrom, current);
 }
 
 template <typename T>

@@ -8,11 +8,11 @@ int main(int argc, char *argv[]) {
   ros::NodeHandle n;
   // Default values
   float res, maxBumpiness, robotRadius, dangerOfUnknown, roughnessWeight, steepnessWeight, maxSteepness;
-  int maxEdges = 40;
+  int maxEdges = 100000;
   res = .5;
   maxBumpiness = 3;
   robotRadius = .15;
-  dangerOfUnknown = 2; // use high value to prevent all unknown locations from being checked
+  dangerOfUnknown = 4; // use high value to prevent all unknown locations from being checked
   roughnessWeight = .5;
   steepnessWeight = 1;
   maxSteepness = 10;
