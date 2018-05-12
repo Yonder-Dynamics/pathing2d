@@ -39,7 +39,7 @@ class Pathing2D {
               float dangerOfUnknown, float roughnessWeight,
               float steepnessWeight, float maxSteepness, int maxEdges,
               std::string frame_id) :
-      gotOcto(false), gotGoal(false), gotRover(false), isProcessing(false),
+      gotOcto(false), gotGoal(false), gotRover(true), isProcessing(false),
       res(res), maxBumpiness(maxBumpiness),
       robotRadius(robotRadius), dangerOfUnknown(dangerOfUnknown),
       roughnessWeight(roughnessWeight), steepnessWeight(steepnessWeight),
