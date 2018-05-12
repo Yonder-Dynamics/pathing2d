@@ -45,4 +45,6 @@ set(SRC
 )
 
 add_executable(pathing2d_node src/pathing2d_node.cpp ${SRC})
+add_executable(testA_node src/testAStart.cpp ${SRC})
 target_link_libraries(pathing2d_node ${LINK_LIBS})
+target_link_libraries(testA_node ${LINK_LIBS})

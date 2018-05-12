@@ -19,18 +19,7 @@ class Graph {
   //vector<tpair> * edges;
   size_t size;
 
-  struct GraphNode {
-    size_t id;
-    vector<size_t> connection;
-    size_t prev;
-    T value;
-    T dist;
-
-    void addConnection(size_t v) {
-      connection.push_back(v);
-    };
-  };
-
+  
   public:
   Graph(size_t size, int maxEdges=-1);
   ~Graph();
@@ -60,6 +49,47 @@ void Graph<T>::addEdge(size_t u, size_t v, T w) {
   if (maxEdges < edges[v].size() && maxEdges > 0)
     edges[v].pop();
 }
+
+//template <typename T>
+/*void makeRandom(size_t width,size_t height){
+  int cost_max = 20;
+  #define NODE_T int
+
+  //build a table of NODE_T
+  NODE_T** table = malloc(sizeof(NODE_T*)*width);
+  int i;
+  for(i=0;i<width;i++){
+    table[i] = malloc(sizeof(NODE_T)*height);
+  }
+  int j;
+
+  //assign flattened table index as node id
+  for(i=0;i<width;i++){
+    for(j=0;j<height;j++){
+      table[i][j] = i + j*i;
+    }
+  }
+
+  //link adjacent table indices
+  for(i=0;i<width;i++){
+    for(j=0;j<height;j++){
+      *//*
+      if(i != 0){
+        this.addEdge(table[i][j],table[i-1][j],1);
+      }
+      if(j != 0){
+        this.addEdge(table[i][j],table[i][j-1],1);
+      }
+      
+      if(i != width-1){
+        this.addEdge(table[i][j],table[i+1][j],1);
+      }
+      if(j != height-1){
+        this.addEdge(table[i][j],table[i][j+1],1);
+      }
+    }
+  }
+}*/
 
 template <typename T>
 T Graph<T>::heuristic(size_t src, size_t goal, std::vector<WeightedPoint> & points) {
