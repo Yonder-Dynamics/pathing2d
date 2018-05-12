@@ -4,7 +4,7 @@
 
 
 int main(int argc, char *argv[]) {
-  ros::init(argc, argv, "pathing2d");
+  ros::init(argc, argv, "pathing");
   ros::NodeHandle n;
   // Default values
   float res, maxBumpiness, robotRadius, dangerOfUnknown, roughnessWeight, steepnessWeight, maxSteepness;
@@ -32,7 +32,7 @@ int main(int argc, char *argv[]) {
                     steepnessWeight, maxSteepness, maxEdges, "map");
   ros::Subscriber sub1 = n.subscribe("/octomap_binary", 3, &Pathing2D::octomapCallback, &pather);
   ros::Subscriber sub2 = n.subscribe("/move_base_simple/goal", 3, &Pathing2D::goalCallback, &pather);
-  ros::Subscriber sub3 = n.subscribe("/initialpose", 3, &Pathing2D::poseCallback, &pather);
+  ros::Subscriber sub3 = n.subscribe("/fusion/local_fusion/filtered", 3, &Pathing2D::poseCallback, &pather);
   std::cout << "Started pathfinding" << std::endl;
   ros::spin();
 }

@@ -9,7 +9,7 @@ class Histogram {
   int width, height, ox, oy;
   public:
     Histogram(int width, int height, int ox=0, int oy=0);
-    std::vector<T> * get(int x, int y);
+    std::vector<T> & get(int x, int y);
     void set(int x, int y, std::vector<T> val);
     void add(int x, int y, T val);
     void findExtrema(cv::Mat * min, cv::Mat * max, float unknown);
@@ -21,8 +21,8 @@ Histogram<T>::Histogram(int width, int height, int ox, int oy) : ox(ox), oy(oy),
 }
 
 template <typename T>
-std::vector<T> * Histogram<T>::get(int x, int y) {
-  return &data[(x-ox)+(y-oy)*width];
+std::vector<T> & Histogram<T>::get(int x, int y) {
+  return data[(x-ox)+(y-oy)*width];
 }
 
 template <typename T>
@@ -44,24 +44,24 @@ void Histogram<T>::findExtrema(cv::Mat * min, cv::Mat * max, float unknown) {
   *max = cv::Mat::zeros(height, width, CV_32F);
   for (int i=0; i<height; i++) {
     for (int j=0; j<width; j++) {
-      std::vector<T> * vals = get(i+ox, j+oy);
+      std::vector<T> & vals = get(j+ox, i+oy);
       //Find max
-      if (vals->size() > 6) {
+      if (vals.size() > 6) {
         // Use inter quartile range then take max value
-        std::sort(vals->begin(), vals->end());
-        float Q1 = vals->at(int(floor(vals->size() / 4)));
-        float Q3 = vals->at(int(floor(3*vals->size() / 4)));
+        std::sort(vals.begin(), vals.end());
+        float Q1 = vals.at(int(floor(vals.size() / 4)));
+        float Q3 = vals.at(int(floor(3*vals.size() / 4)));
         // Max when discarding outliers
         max->at<float>(i,j) = Q3 + 1.5*(Q3-Q1);
         min->at<float>(i,j) = Q1 - 1.5*(Q3-Q1);
-      } else if (vals->size() > 0) {
+      } else if (vals.size() > 0) {
         // Use average
         T sum = 0;
-        for (T val : *vals) {
+        for (T val : vals) {
           sum += val;
         }
-        max->at<float>(i,j) = sum/vals->size();
-        min->at<float>(i,j) = sum/vals->size();
+        max->at<float>(i,j) = sum/vals.size();
+        min->at<float>(i,j) = sum/vals.size();
       } else {
         max->at<float>(i,j) = unknown;
         min->at<float>(i,j) = unknown;

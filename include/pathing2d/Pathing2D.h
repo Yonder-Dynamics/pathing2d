@@ -1,23 +1,32 @@
 #pragma once
 #include <octomap/octomap.h>
-#include <octomap_msgs/Octomap.h>
 #include <octomap_msgs/conversions.h>
-#include <iostream>
 #include <pcl_conversions/pcl_conversions.h>
 #include <ros/ros.h>
+
+#include <octomap_msgs/Octomap.h>
 #include <geometry_msgs/PoseArray.h>
-#include <geometry_msgs/Point.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/PoseWithCovariance.h>
+#include <geometry_msgs/Point.h>
+#include <nav_msgs/Odometry.h>
 #include <nav_msgs/Path.h>
 #include <nav_msgs/OccupancyGrid.h>
+
+#include <iostream>
+#include <cmath>
 #include <opencv2/opencv.hpp>
+
 #include <pathing2d/Graph.hpp>
+#include <pathing2d/Histogram.hpp>
+#include <pathing2d/Pathing2D.h>
+#include <pathing2d/util.h>
 
 class Pathing2D {
-  bool gotGoal, gotOcto, gotRover;
+  bool gotGoal, gotOcto, gotRover, isProcessing;
   double ox, oy, oz;
   double mx, my, mz;
+  double width, height, depth;
   std::string frame_id;
   boost::shared_ptr<octomap::OcTree> tree;
   geometry_msgs::Pose goal, rover;
@@ -30,7 +39,8 @@ class Pathing2D {
               float dangerOfUnknown, float roughnessWeight,
               float steepnessWeight, float maxSteepness, int maxEdges,
               std::string frame_id) :
-      gotOcto(false), gotGoal(false), gotRover(true), res(res), maxBumpiness(maxBumpiness),
+      gotOcto(false), gotGoal(false), gotRover(false), isProcessing(false),
+      res(res), maxBumpiness(maxBumpiness),
       robotRadius(robotRadius), dangerOfUnknown(dangerOfUnknown),
       roughnessWeight(roughnessWeight), steepnessWeight(steepnessWeight),
       maxSteepness(maxSteepness), maxEdges(maxEdges), frame_id(frame_id) {
@@ -38,7 +48,7 @@ class Pathing2D {
       map_pub = n.advertise<nav_msgs::OccupancyGrid>("occupancy_grid", 4);
     };
 
-    void poseCallback(const geometry_msgs::PoseWithCovariance::ConstPtr& msg);
+    void poseCallback(const nav_msgs::Odometry::ConstPtr& msg);
     void goalCallback(const geometry_msgs::PoseStamped::ConstPtr& msg);
     void octomapCallback(const octomap_msgs::Octomap::ConstPtr& msg);
 
@@ -47,26 +57,16 @@ class Pathing2D {
 
     void process();
     cv::Mat processOctomap();
-    std::vector<WeightedPoint> openPositions(
-        // basic height histogram
-        const cv::Mat & heightHist,
-        // histogram that has been convolved to find edges
-        const cv::Mat & edgeHist,
-        // threshold for maximum amount of edges
-        float maxBumpiness,
-        // Radius to check around points for occupation
-        float radius,
-        // bumpiness of unknown things, basically how much to avoid unknown parts of map
-        float dangerOfUnknown,
-        // Resolution of histogram, ie coords in hist*res = coords in world
-        float res);
 
     Graph<float> buildGraph(
-        std::vector<WeightedPoint> & points,
+        const cv::Mat & heightHist,
+        const cv::Mat & occupancy,
+        std::vector<WeightedPoint> & openPoses, // output
+        cv::Mat * graphIndexes, // output
+        float maxBumpiness,
         float roughnessWeight,
         float steepnessWeight,
         float maxSteepness,
-        // Should be slightly less than the radius for occupation around robot
         float maxLength,
         int maxEdges);
 
