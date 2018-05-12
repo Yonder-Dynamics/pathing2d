@@ -9,13 +9,13 @@ int main(int argc, char *argv[]) {
   // Default values
   float res, maxBumpiness, robotRadius, dangerOfUnknown, roughnessWeight, steepnessWeight, maxSteepness;
   int maxEdges = 100000;
-  res = .5;
+  res = .2;
   maxBumpiness = 3;
   robotRadius = .15;
   dangerOfUnknown = 4; // use high value to prevent all unknown locations from being checked
   roughnessWeight = .5;
   steepnessWeight = 1;
-  maxSteepness = 10;
+  maxSteepness = 3;
 
   // Retrieve params
   n.getParam("maxEdge", maxEdges);

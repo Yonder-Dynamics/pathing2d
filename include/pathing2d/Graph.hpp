@@ -24,7 +24,7 @@ class Graph {
   int maxEdges;
   typedef pair<size_t, T> tpair;
   // array of nodes for which there is an array of their connections
-  priority_queue<tpair> * edges; 
+  priority_queue<tpair, std::vector<tpair>, Compare<T> > * edges; 
   //vector<tpair> * edges;
   size_t size;
 
@@ -41,7 +41,7 @@ class Graph {
 
 template <typename T>
 Graph<T>::Graph(size_t size, int maxEdges) : size(size), maxEdges(maxEdges) {
-  edges = new priority_queue<tpair> [size];
+  edges = new priority_queue<tpair, std::vector<tpair>, Compare<T> > [size];
 }
 
 template <typename T>

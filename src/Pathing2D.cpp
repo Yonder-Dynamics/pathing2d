@@ -35,8 +35,6 @@ void Pathing2D::goalCallback(const geometry_msgs::PoseStamped::ConstPtr& msg) {
   if (!isProcessing) {
     std::cout << "Recieved goal" << std::endl;
     goal = msg->pose;
-    rover = goal;
-    rover.position.x -= 1;
     gotGoal = true;
     if (gotOcto && gotRover && !isProcessing)
       process();
@@ -164,7 +162,7 @@ Graph<float> Pathing2D::buildGraph(
   float dist, slope, roughness;
   bool goalWithinHist = (ox < goal.position.x && goal.position.x < mx) &&
                         (oy < goal.position.y && goal.position.y < my);
-  Graph<float> g(openPoses.size()+2, maxEdges);
+  Graph<float> g(openPoses.size(), maxEdges);
   for (int i=0; i<graphIndexes->rows; i++) {
     for (int j=0; j<graphIndexes->cols; j++) {
       if (graphIndexes->at<int>(i, j) != -1) {
@@ -191,7 +189,8 @@ Graph<float> Pathing2D::buildGraph(
           for (int dx=-1; dx<=1; dx++) {
             if ((i+dy > 0 && i+dy < occupancy.rows) &&
                 (j+dx > 0 && j+dx < occupancy.cols) &&
-                (graphIndexes->at<int>(i+dy, j+dx) != -1)) {
+                (graphIndexes->at<int>(i+dy, j+dx) != -1) &&
+                !(dx==0 && dy==0)) {
               int ind2 = graphIndexes->at<int>(i+dy, j+dx);
               WeightedPoint & p2 = openPoses[ind2];
 
@@ -217,11 +216,13 @@ void Pathing2D::process() {
   std::cout << "Creating heightmap" << std::endl;
   cv::Mat unknown;
   cv::Mat rawHeight = processOctomap(&unknown);
+  /* Display
   cv::Mat bw;
   cv::normalize(rawHeight, bw, 0, 255, 32, CV_8UC1);
   cv::namedWindow("Height", 0);
   cv::imshow("Height", bw);
   cv::waitKey(0);
+  */
   
   //--------- Calculate slope histogram (derivative) ------------
 
@@ -303,9 +304,14 @@ void Pathing2D::process() {
   std::cout << "Building graph" << std::endl;
   std::vector<WeightedPoint> open;
   cv::Mat graphIndexes;
+  float maxLength = (robotRadius > res) ? robotRadius : robotRadius+sqrt(2*res*res);
   Graph<float> g = buildGraph(rawHeight, occupationHist, open, &graphIndexes,
       2, maxBumpiness, roughnessWeight, steepnessWeight, maxSteepness,
       robotRadius, maxEdges);
+
+  cv::namedWindow("GraphIndexes", 0);
+  cv::imshow("GraphIndexes", graphIndexes);
+  cv::waitKey(0);
 
   // Find path
   std::cout << "Finding shortest path" << std::endl;
