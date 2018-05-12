@@ -8,26 +8,11 @@
 #include <geometry_msgs/PoseArray.h>
 #include <geometry_msgs/Point.h>
 #include <geometry_msgs/PoseStamped.h>
+#include <geometry_msgs/PoseWithCovariance.h>
 #include <nav_msgs/Path.h>
 #include <nav_msgs/OccupancyGrid.h>
 #include <opencv2/opencv.hpp>
 #include <pathing2d/Graph.hpp>
-
-// It's like filter2d but implemented properly
-cv::Mat filter2D(cv::Mat src, int ddepth, cv::Mat & kernel,
-    const cv::Point & origin=cv::Point(-1,-1), double delta=0,
-    int border_type=cv::BORDER_DEFAULT,
-    const cv::Scalar & border_value=cv::Scalar());
-cv::Mat circularFilter(int rad);
-float dist2d(geometry_msgs::Point & a, geometry_msgs::Point & b);
-float dist3d(geometry_msgs::Point & a, geometry_msgs::Point & b);
-
-struct WeightedPoint : public geometry_msgs::Point {
-  float weight;
-  bool operator < (WeightedPoint const &b) { 
-    return weight < b.weight;
-  }
-};
 
 class Pathing2D {
   bool gotGoal, gotOcto, gotRover;
@@ -45,7 +30,7 @@ class Pathing2D {
               float dangerOfUnknown, float roughnessWeight,
               float steepnessWeight, float maxSteepness, int maxEdges,
               std::string frame_id) :
-      gotGoal(false), gotRover(false), res(res), maxBumpiness(maxBumpiness),
+      gotOcto(false), gotGoal(false), gotRover(true), res(res), maxBumpiness(maxBumpiness),
       robotRadius(robotRadius), dangerOfUnknown(dangerOfUnknown),
       roughnessWeight(roughnessWeight), steepnessWeight(steepnessWeight),
       maxSteepness(maxSteepness), maxEdges(maxEdges), frame_id(frame_id) {
@@ -53,7 +38,7 @@ class Pathing2D {
       map_pub = n.advertise<nav_msgs::OccupancyGrid>("occupancy_grid", 4);
     };
 
-    void poseCallback(const geometry_msgs::PoseStamped::ConstPtr& msg);
+    void poseCallback(const geometry_msgs::PoseWithCovariance::ConstPtr& msg);
     void goalCallback(const geometry_msgs::PoseStamped::ConstPtr& msg);
     void octomapCallback(const octomap_msgs::Octomap::ConstPtr& msg);
 
