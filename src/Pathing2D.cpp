@@ -123,6 +123,7 @@ Graph<float> Pathing2D::buildGraph(
     const cv::Mat & occupancy,
     std::vector<WeightedPoint> & openPoses,
     cv::Mat * graphIndexes,
+    float roverConnectionRad,
     float maxBumpiness,
     float roughnessWeight,
     float steepnessWeight,
@@ -132,13 +133,19 @@ Graph<float> Pathing2D::buildGraph(
 {
   // Create positions filter by threshold
   *graphIndexes = -cv::Mat::ones(occupancy.rows, occupancy.cols, cv::DataType<int>::type);
+  WeightedPoint src;
+  src.x = rover.position.x;
+  src.y = rover.position.y;
+  src.z = rover.position.z;
+  src.weight = 0;
+  openPoses.push_back(src);
   for (int i=0; i<occupancy.rows; i++) {
     for (int j=0; j<occupancy.cols; j++) {
       // Exponentiate threshold to match occupationHist
       if (occupancy.at<float>(i, j) < maxBumpiness) {
         WeightedPoint p;
-        p.x = j * res + ox;
-        p.y = i * res + oy;
+        p.x = j * res + ox - 1;
+        p.y = i * res + oy - 1;
         p.z = heightHist.at<float>(i, j);
         p.weight = occupancy.at<float>(i,j);
         graphIndexes->at<int>(i, j) = openPoses.size();
@@ -146,6 +153,12 @@ Graph<float> Pathing2D::buildGraph(
       }
     }
   }
+  WeightedPoint end;
+  end.x = goal.position.x;
+  end.y = goal.position.y;
+  end.z = goal.position.z;
+  end.weight = 0;
+  openPoses.push_back(end);
   std::cout << *graphIndexes << std::endl;
 
   float dist, slope, roughness;
@@ -161,14 +174,16 @@ Graph<float> Pathing2D::buildGraph(
         // Add key edges to graph
         // Rover
         dist = dist2d(p1, rover.position);
-        slope = abs(p1.z-rover.position.z)/dist;
-        g.addEdge(ind1, 0,
-            dist + slope*steepnessWeight + p1.weight*roughnessWeight);
+        if (dist < roverConnectionRad) {
+          slope = abs(p1.z-rover.position.z)/dist;
+          g.addEdge(ind1, 0,
+              dist + slope*steepnessWeight + p1.weight*roughnessWeight);
+        }
         // Goal
         if (goalWithinHist) {
           dist = dist2d(p1, goal.position);
           slope = abs(p1.z-goal.position.z)/dist;
-          g.addEdge(ind1, openPoses.size()+1,
+          g.addEdge(ind1, openPoses.size()-1,
               dist + slope*steepnessWeight + p1.weight*roughnessWeight);
         }
         // Add local edges to graph
@@ -219,11 +234,13 @@ void Pathing2D::process() {
   //cv::medianBlur (rawHeight, edgeHist, 5);
   cv::GaussianBlur(rawHeight, edgeHist, cv::Size(3,3), 10, 10,
       cv::BORDER_CONSTANT);//, dangerOfUnknown);
+
+  /* Display
   cv::normalize(edgeHist, bw, 0, 255, 32, CV_8UC1);
   cv::namedWindow("Edge", 0);
   cv::imshow("Edge", bw);
   cv::waitKey(0);
-  //*/
+  */
 
   /// Gradient X
   cv::Sobel( edgeHist, grad_x, -1, 1, 0, 3, 1, 0,
@@ -238,12 +255,12 @@ void Pathing2D::process() {
   float avg = float(cv::sum(edgeHist)[0])/edgeHist.rows/edgeHist.cols;
   edgeHist = cv::abs(edgeHist - avg);
   cv::add(edgeHist, unknown*dangerOfUnknown, edgeHist, cv::noArray(), CV_32F);
-  //* Display
+  /* Display
   cv::normalize(edgeHist, bw, 0, 255, 32, CV_8UC1);
   cv::namedWindow("Edge", 0);
   cv::imshow("Edge", bw);
   cv::waitKey(0);
-  //*/
+  */
   //---------------------------END-------------------------------
 
 
@@ -270,12 +287,12 @@ void Pathing2D::process() {
     occupationHist = prefiltered;
   }
 
-  //* Display
+  /* Display
   cv::normalize(occupationHist, bw, 0, 255, 32, CV_8UC1);
   cv::namedWindow("Traversable", 0);
   cv::imshow("Traversable", bw);
   cv::waitKey(0);
-  //*/
+  */
   //---------------------------END-------------------------------
 
   // Publish map
@@ -287,12 +304,12 @@ void Pathing2D::process() {
   std::vector<WeightedPoint> open;
   cv::Mat graphIndexes;
   Graph<float> g = buildGraph(rawHeight, occupationHist, open, &graphIndexes,
-      maxBumpiness, roughnessWeight, steepnessWeight, maxSteepness,
+      2, maxBumpiness, roughnessWeight, steepnessWeight, maxSteepness,
       robotRadius, maxEdges);
 
   // Find path
   std::cout << "Finding shortest path" << std::endl;
-  std::vector<size_t> shortestPath = g.shortestPath(0, open.size()+1, open);
+  std::vector<size_t> shortestPath = g.shortestPath(0, open.size()-1, open);
   nav_msgs::Path path = construct(shortestPath, open);
   std::cout << path << std::endl;
   traj_pub.publish(path);
@@ -308,12 +325,24 @@ nav_msgs::Path Pathing2D::construct(const std::vector<size_t> & path,
   for (size_t i=0; i<path.size(); i++) {
     geometry_msgs::PoseStamped pose;
     pose.header.frame_id = frame_id;
+    pose.pose.position = nodes[path[i]];
+    // Fancy calculation to determine orientation to goal
+    // Or not
+    pose.pose.orientation.x = 0;
+    pose.pose.orientation.y = 0;
+    pose.pose.orientation.z = 0;
+    pose.pose.orientation.w = 1;
+    poses.push_back(pose);
+    if (path[i]==0) {
+      std::cout << pose << std::endl;
+    }
 
+    /*
     if (path[i] == nodes.size()+1) {
       pose.pose = goal;
       poses.push_back(pose);
     } else if (path[i] != 0) {
-      pose.pose.position = nodes[path[i]];
+      pose.pose.position = nodes[path[i]-1];
       // Fancy calculation to determine orientation to goal
       // Or not
       pose.pose.orientation.x = 0;
@@ -321,7 +350,11 @@ nav_msgs::Path Pathing2D::construct(const std::vector<size_t> & path,
       pose.pose.orientation.z = 0;
       pose.pose.orientation.w = 1;
       poses.push_back(pose);
+    } else {
+      pose.pose = rover;
+      poses.push_back(pose);
     }
+    */
   }
   nav_msgs::Path path_msg;
   path_msg.poses = poses;

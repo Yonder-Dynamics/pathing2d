@@ -63,6 +63,7 @@ class Pathing2D {
         const cv::Mat & occupancy,
         std::vector<WeightedPoint> & openPoses, // output
         cv::Mat * graphIndexes, // output
+        float roverConnectionRad,
         float maxBumpiness,
         float roughnessWeight,
         float steepnessWeight,
