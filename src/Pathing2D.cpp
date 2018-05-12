@@ -60,13 +60,24 @@ cv::Mat Pathing2D::processOctomap() {
   tree->getMetricMax(mx, my, mz);
   tree->getMetricSize(width, height, depth);
 
+  mx = ((ox + mx)/2) + 5;
+  my = ((oy + my)/2) + 5;
+  mz = ((oz + mz)/2) + 5;
+
+  ox = ((ox + mx)/2) - 5;
+  oy = ((oy + my)/2) - 5;
+  oz = ((oz + mz)/2) - 5;
+
   Histogram<float> occupied (
       int(ceil((mx-ox)/res)), int(ceil((my-oy)/res)), 0, 0);
   Histogram<float> empty (
       int(ceil((mx-ox)/res)), int(ceil((my-oy)/res)), 0, 0);
 
+  octomath::Vector3 first(ox, oy, oz);
+  octomath::Vector3 second(mx, my, mz);
+
   // Fill
-  for(auto it = tree->begin(); it != tree->end(); it++) {
+  for(auto it = tree->begin_leafs_bbx(first, second, 14); it != tree->end_leafs_bbx(); it++) {
     octomath::Vector3 pos = it.getCoordinate();
     int x = int((pos.x()-ox)/res);
     int y = int((pos.y()-oy)/res);
