@@ -41,6 +41,7 @@ set(LINK_LIBS
 
 set(SRC
   "src/Pathing2D.cpp"
+  "src/util.cpp"
 )
 
 add_executable(pathing2d_node src/pathing2d_node.cpp ${SRC})

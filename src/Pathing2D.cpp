@@ -6,6 +6,7 @@
 #include <octomap_msgs/Octomap.h>
 #include <geometry_msgs/PoseArray.h>
 #include <geometry_msgs/PoseStamped.h>
+#include <geometry_msgs/PoseWithCovariance.h>
 #include <geometry_msgs/Point.h>
 
 #include <iostream>
@@ -15,49 +16,10 @@
 #include <pathing2d/Graph.hpp>
 #include <pathing2d/Histogram.hpp>
 #include <pathing2d/Pathing2D.h>
+#include <pathing2d/util.h>
 
-cv::Mat filter2D(cv::Mat src, int ddepth, cv::Mat & kernel,
-    const cv::Point & origin, double delta,
-    int border_type, const cv::Scalar & border_value)
-{
-  cv::Mat dst;
-  int s = int(ceil(float(kernel.rows)/2.0));
-  copyMakeBorder(src, dst, s,s,s,s, border_type, border_value);
-  cv::filter2D(dst, dst, ddepth, kernel,
-      origin, delta, border_type);
-  // Remove border
-  cv::Rect roi (cv::Point(s,s), src.size());
-  return dst(roi);
-}
-
-cv::Mat circularFilter(int rad) {
-  cv::Mat filter (2*rad+1, 2*rad+1, CV_32F);
-  float dist;
-  for (int i=0; i<2*rad+1; i++) {
-    for (int j=0; j<2*rad+1; j++) {
-      dist = (i - rad)*(i - rad) + (j - rad)*(j - rad);
-      if (dist < rad*rad) {
-        filter.at<float>(i, j) = 1;
-      } else {
-        // Add soft edges
-        filter.at<float>(i, j) = 0;
-      }
-    }
-  }
-  return filter;
-}
-
-float dist2d(geometry_msgs::Point & a, geometry_msgs::Point & b) {
-   return sqrt((a.x-b.x)*(a.x-b.x) + (a.y-b.y)*(a.y-b.y));
-}
-
-float dist3d(geometry_msgs::Point & a, geometry_msgs::Point & b) {
-   return sqrt((a.x-b.x)*(a.x-b.x) +
-               (a.y-b.y)*(a.y-b.y) +
-               (a.z-b.z)*(a.z-b.z));
-}
-
-void Pathing2D::poseCallback(const geometry_msgs::PoseStamped::ConstPtr& msg) {
+void Pathing2D::poseCallback(const geometry_msgs::PoseWithCovariance::ConstPtr& msg) {
+  std::cout << "Recieved pose" << std::endl;
   rover = msg->pose;
   gotRover = true;
   if (gotOcto && gotGoal)
@@ -65,7 +27,10 @@ void Pathing2D::poseCallback(const geometry_msgs::PoseStamped::ConstPtr& msg) {
 }
 
 void Pathing2D::goalCallback(const geometry_msgs::PoseStamped::ConstPtr& msg) {
+  std::cout << "Recieved goal" << std::endl;
   goal = msg->pose;
+  rover = goal;
+  rover.position.x -= 1;
   gotGoal = true;
   if (gotOcto && gotRover)
     process();
@@ -76,7 +41,7 @@ void Pathing2D::octomapCallback(const octomap_msgs::Octomap::ConstPtr& msg) {
   octomap::AbstractOcTree* atree = octomap_msgs::binaryMsgToMap(*msg);
   tree = boost::make_shared<octomap::OcTree>(*(octomap::OcTree *)atree);
   gotOcto = true;
-  //if (gotGoal && gotRover)
+  if (gotGoal && gotRover)
     process();
   delete(atree);
 }
@@ -113,7 +78,7 @@ cv::Mat Pathing2D::processOctomap() {
   empty.findExtrema(&emp_min, &emp_max, dangerOfUnknown);
   cv::Mat hist = cv::min(occ_max, emp_min);
   //cv::Mat hist = occ_max/2 + emp_min/2;
-  // Display things
+  /* Display things
   cv::namedWindow("Hist", 0);
   cv::Mat bw;
   cv::normalize(occ_max, bw, 0, 255, 32, CV_8UC1);
@@ -125,6 +90,7 @@ cv::Mat Pathing2D::processOctomap() {
   cv::normalize(hist, bw, 0, 255, 32, CV_8UC1);
   cv::imshow("Hist", bw);
   cv::waitKey(0);
+  */
   return hist;
 }
 
@@ -172,18 +138,18 @@ Graph<float> Pathing2D::buildGraph(
   for (int i=0; i<points.size(); i++) {
     p1 = &points[i];
     // Add key edges to graph
-    if (true) {
-      // Goal
+    // Rover
+    dist = dist2d(*p1, rover.position);
+    slope = abs(p1->z-rover.position.z)/dist;
+    //if (dist < maxLength && slope < maxSteepness) {
+    g.addEdge(i+1, 0, dist + slope*steepnessWeight + p1->weight*roughnessWeight);
+    //}
+    // Goal
+    if (goalWithinHist) {
       dist = dist2d(*p1, goal.position);
       slope = abs(p1->z-goal.position.z)/dist;
       if (dist < maxLength && slope < maxSteepness) {
         g.addEdge(i+1, points.size()+1, dist + slope*steepnessWeight + p1->weight*roughnessWeight);
-      }
-      // Rover
-      dist = dist2d(*p1, rover.position);
-      slope = abs(p1->z-rover.position.z)/dist;
-      if (dist < maxLength && slope < maxSteepness) {
-        g.addEdge(i+1, 0, dist + slope*steepnessWeight + p1->weight*roughnessWeight);
       }
     }
 
@@ -191,7 +157,7 @@ Graph<float> Pathing2D::buildGraph(
     for (int j=i; j<points.size(); j++) {
       if (i!=j) {
         // Add an edge for every point
-        p2 = &points[i];
+        p2 = &points[j];
         dist = dist2d(*p1, *p2);
         slope = abs(p1->z-p2->z)/dist;
         roughness = p1->weight/2+p2->weight/2;
@@ -253,13 +219,13 @@ void Pathing2D::process() {
   occupationHist = filter2D(prefiltered, -1, filter,
       cv::Point(-1, -1), 0, cv::BORDER_CONSTANT, dangerOfUnknown);
 
-  //* Display
+  /* Display
   cv::Mat bw;
   cv::threshold(occupationHist, bw, maxBumpiness, 255, cv::THRESH_BINARY);
   cv::namedWindow("Traversable", 0);
   cv::imshow("Traversable", bw);
   cv::waitKey(0);
-  //*/
+  */
   //---------------------------END-------------------------------
 
   // Find all nodes for graph
@@ -270,10 +236,10 @@ void Pathing2D::process() {
   // Find all edges for graph
   std::cout << "Building graph" << std::endl;
   Graph<float> g = buildGraph( open, roughnessWeight, steepnessWeight,
-      maxSteepness, robotRadius-1, maxEdges);
+      maxSteepness, robotRadius, maxEdges);
 
   // Find path
-  std::vector<size_t> shortestPath = g.shortestPath(open.size());
+  std::vector<size_t> shortestPath = g.shortestPath(0, open.size()+1, open);
   nav_msgs::Path path = construct(shortestPath, open);
   std::cout << path << std::endl;
   traj_pub.publish(path);
@@ -315,9 +281,6 @@ nav_msgs::Path Pathing2D::construct(const std::vector<size_t> & path,
 nav_msgs::OccupancyGrid Pathing2D::cvToGrid(cv::Mat & mat) {
   cv::Mat intmat;
   cv::normalize(mat.t(), intmat, 0, 100, 32, CV_8UC1);
-  cv::namedWindow("Intmat", 0);
-  cv::imshow("Intmat", intmat);
-  cv::waitKey(0);
   nav_msgs::OccupancyGrid grid;
   grid.data.clear();
   grid.data.resize(mat.rows*mat.cols);
