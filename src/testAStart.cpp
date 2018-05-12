@@ -23,7 +23,7 @@ int main() {
   Graph<int> g(6, 100);
   g.addEdge(0, 1, 0);
   g.addEdge(0, 2, 1);
-  g.addEdge(1, 2, 0);
+  g.addEdge(1, 2, 3);
   g.addEdge(1, 3, 1);
   g.addEdge(3, 4, 0);
   g.addEdge(4, 5, 2);
@@ -36,5 +36,5 @@ int main() {
   for (auto it = results.begin(); it != results.end(); it++)
     std::cout << *it << std::endl;
 
-
+  g.saveDotFile("test.gv");
 }

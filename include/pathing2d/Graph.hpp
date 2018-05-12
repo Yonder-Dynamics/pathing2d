@@ -7,6 +7,8 @@
 #include <limits>
 #include <unordered_map>
 #include <pathing2d/util.h>
+#include <iostream>
+#include <fstream>
 
 using namespace std;
 
@@ -24,8 +26,8 @@ class Graph {
   int maxEdges;
   typedef pair<size_t, T> tpair;
   // array of nodes for which there is an array of their connections
-  priority_queue<tpair, std::vector<tpair>, Compare<T> > * edges; 
-  //vector<tpair> * edges;
+  //priority_queue<tpair, std::vector<tpair>, Compare<T> > * edges; 
+  vector<tpair> * edges;
   size_t size;
 
 
@@ -34,6 +36,7 @@ class Graph {
   ~Graph();
   void addEdge(size_t u, size_t v, T w);
   T heuristic(size_t src, size_t goal, std::vector<WeightedPoint> & points);
+  void saveDotFile(std::string fname);
   std::vector<size_t> reconstruct_path(std::vector<size_t>& cameFrom, size_t current);
   std::vector<size_t> shortestPath(size_t src, size_t goal,
       std::vector<WeightedPoint> & points);
@@ -41,7 +44,8 @@ class Graph {
 
 template <typename T>
 Graph<T>::Graph(size_t size, int maxEdges) : size(size), maxEdges(maxEdges) {
-  edges = new priority_queue<tpair, std::vector<tpair>, Compare<T> > [size];
+  //edges = new priority_queue<tpair, std::vector<tpair>, Compare<T> > [size];
+  edges = new vector<tpair> [size];
 }
 
 template <typename T>
@@ -51,12 +55,30 @@ Graph<T>::~Graph() {
 
 template <typename T>
 void Graph<T>::addEdge(size_t u, size_t v, T w) {
+  /*
   edges[u].push(make_pair(v, w));
   edges[v].push(make_pair(u, w));
   if (maxEdges < edges[u].size() && maxEdges > 0)
     edges[u].pop();
   if (maxEdges < edges[v].size() && maxEdges > 0)
     edges[v].pop();
+  */
+  edges[u].push_back(make_pair(v, w));
+  edges[v].push_back(make_pair(u, w));
+}
+
+template <typename T>
+void Graph<T>::saveDotFile(std::string fname) {
+  ofstream file;
+  file.open (fname);
+  file << "digraph {\n";
+  for (int i=0; i<size; i++) {
+    for (auto it = edges[i].begin(); it != edges[i].end(); it++) {
+      file << "\t" << i << "->" << it->first << " [label=\"" << it->second << "\"]\n";
+    }
+  }
+  file << "}";
+  file.close();
 }
 
 //template <typename T>
@@ -142,24 +164,8 @@ std::vector<size_t> Graph<T>::shortestPath(size_t src, size_t goal,
   //tpair current_pair = openSet.top();
   size_t current = openSet.top().first;
 
-  /*
-     for (tpair& x : edges[src]) {
-     openSet.push_back(x.first);
-     }
-     */
-
   while (!openSet.empty()) {
     //Choose lowest fScore from openSet (need to use priority queue here)
-    /*
-       size_t lowest;
-       for (size_t x : openSet) {
-       if (fScore[x] <= fScore[lowest])
-       lowest = x;
-       }
-       current = lowest;
-
-       openSet.remove(current);
-       */
     current = openSet.top().first;
     closedSet.push_back(current);
     closedSetQ.push(openSet.top());
@@ -170,31 +176,19 @@ std::vector<size_t> Graph<T>::shortestPath(size_t src, size_t goal,
     }
 
     // Search the neighbors of current
-    //for (auto it = edges[current].begin(); it != edges[current].end(); it++) {
-    //  tpair& x = *it;
-    while (edges[current].size() > 0) {
-      tpair x = edges[current].top();
-      edges[current].pop();
+    for (auto it = edges[current].begin(); it != edges[current].end(); it++) {
+      tpair& x = *it;
+    //while (edges[current].size() > 0) {
+    //  tpair x = edges[current].top();
+    //  edges[current].pop();
       // Skip if already evaluated
       if (std::find(closedSet.begin(), closedSet.end(),x.first) != closedSet.end())
         continue;
       // Add to open set if not yet evaluated. Technically unnecessary as we
       // will never reprocess the same point thanks to closed set
-      //if (std::find(openSet.begin(), openSet.end(), x.first) == openSet.end())
-      //openSet.push_back(x.first);
 
       /// Then assign that node a gScore based on current distance and
       /// distance from that node to current
-
-      /*
-      // Search for the distance
-      int found = -1;
-      for (int i = 0; i < edges[current].size(); i++) {
-      if (edges[current].at(i).first == x.first)
-      found = i;
-      }
-      T tentative_score = gScore[current] + edges[current].at(found).second;
-      */
 
       T tentative_score = gScore[current] + x.second;
 
@@ -210,16 +204,16 @@ std::vector<size_t> Graph<T>::shortestPath(size_t src, size_t goal,
   }
   current = closedSetQ.top().first;
   return reconstruct_path(cameFrom, current);
-  }
+}
 
-  template <typename T>
-    std::vector<size_t> Graph<T>::reconstruct_path (std::vector<size_t>& cameFrom, size_t current) {
-      std::vector<size_t> path;
-      path.push_back(current);
-      while (cameFrom[current] != size_t(-1)) {
-        // Add to the path the shortest path to current and set current to the previous node
-        current = cameFrom[current];
-        path.insert(path.begin(), current);
-      }
-      return path;
-    }
+template <typename T>
+std::vector<size_t> Graph<T>::reconstruct_path (std::vector<size_t>& cameFrom, size_t current) {
+  std::vector<size_t> path;
+  path.push_back(current);
+  while (cameFrom[current] != size_t(-1)) {
+    // Add to the path the shortest path to current and set current to the previous node
+    current = cameFrom[current];
+    path.insert(path.begin(), current);
+  }
+  return path;
+}
