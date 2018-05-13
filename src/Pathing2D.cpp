@@ -212,6 +212,7 @@ Graph<float> Pathing2D::buildGraph(
 }
 
 void Pathing2D::process() {
+  gotGoal = false;
   isProcessing = true;
   std::cout << "Creating heightmap" << std::endl;
   cv::Mat unknown;
