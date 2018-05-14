@@ -81,7 +81,7 @@ class DubiousCurves:
                        (circle_1['x'] - circle_0['x']) )
         
         # Sums both to get phi in comparison to x=0
-        abs_phi = rel_phi +  theta
+        abs_phi = theta + radian_dir * rel_phi
         
         # Point on source circle
         x_0 = radius * cos(abs_phi) + circle_0['x']
