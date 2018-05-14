@@ -76,6 +76,19 @@ class DubiousCurves:
     def __init__(self):
         pass
         
+    def radian_on_circle(self,circle,x,y):
+        """
+        Calculates on what angle of the circle the point is on.
+        """
+        
+        # Relative to center
+        x_rel = x - circle['x']
+        y_rel = y - circle['y']
+        
+        theta = atan2(y_rel,x_rel)
+        
+        return theta
+        
     def circle_to_circle_angle(self,circle_src,circle_dest):
         """
         Calculates the angle from the center of one circle to the center of
@@ -317,23 +330,27 @@ class DubiousCurves:
         else:
             first1 = 1
         
+        tang = None
         
         if(second1 == 0):
-            tang1 = self.tangent_line_outer(src[first],
-                dest[second],first1,'bo-')
-            tang2 = self.tangent_line_outer(src[first],
+            tang = self.tangent_line_outer(src[first],
                 dest[second],first1,'go-')
         else:
-            tang3 = self.tangent_line_inner(src[first],
-                dest[second],first1,'bo-')
-            tang4 = self.tangent_line_inner(src[first],
+            tang = self.tangent_line_inner(src[first],
                 dest[second],first1,'go-')
         
         plot_line(src[first]['x'],src[first]['y'],
             dest[second]['x'],dest[second]['y'])
         
-        plot_sector(src[first],0,3*pi/2)
+        # Plot on start circle
+        start_radian = self.radian_on_circle(src[first],x_0,y_0)
+        end_radian = self.radian_on_circle(src[first],tang[0][0],tang[0][1])
+        plot_sector(src[first],start_radian,end_radian)
         
+        # Plot on end circle
+        start_radian = self.radian_on_circle(dest[second],tang[1][0],tang[1][1])
+        end_radian = self.radian_on_circle(dest[second],x_1,y_1)
+        plot_sector(dest[second],start_radian,end_radian)
         
         
         return "GTFO"
