@@ -260,11 +260,18 @@ class DubiousCurves:
             first = 0
         else:
             first = 1
-            
+        
         if(radians_1 > theta):
             second = 0
         else:
             second = 1
+            
+        second1 = second
+            
+        if(y_1 < y_0):
+            second = 1 if second == 0 else 1
+            first = 1 if first == 0 else 1
+            
         
         """
         Pos on circle: pi/2
@@ -292,7 +299,7 @@ class DubiousCurves:
             first1 = 1
         
         
-        if(second == 0):
+        if(second1 == 0):
             tang1 = self.tangent_line_outer(src[first],
                 dest[second],first1,'bo-')
             tang2 = self.tangent_line_outer(src[first],
