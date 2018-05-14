@@ -81,7 +81,7 @@ class DubiousCurves:
         Args:
             circle_0: Source circle.
             circle_1: Destination circle.
-            radian_dir: Negative radianed circle if -1, positive if 1.
+            radian_dir: Negative radianed tangent if -1, positive if 1.
             
         Returns:
             A tuple of tuples that represent an inner tangent.
@@ -116,14 +116,14 @@ class DubiousCurves:
         return ((x_0,y_0),(x_1,y_1))
         
     
-    def tangent_line_outer(self,circle_0,circle_1, x_dir, color='ro-'):
+    def tangent_line_outer(self,circle_0,circle_1, radian_dir, color='ro-'):
         """
         Calculates outer tangent line points for two circles.
         
         Args:
             circle_0: Source circle.
             circle_1: Destination circle.
-            x_dir: -1 or 1, left tangent if -1, right tangent otherwise.
+            radian_dir: Negative radianed tangent if -1, positive if 1.
         Returns:
             A tuple of tuples that represent an outer tangent.
         """
@@ -135,12 +135,12 @@ class DubiousCurves:
         theta = self.circle_to_circle_angle(circle_0,circle_1)
         
         # Point on source circle
-        x_0 = radius * cos(theta + -1 * x_dir * pi/2) + circle_0['x']
-        y_0 = radius * sin(theta + -1 * x_dir * pi/2) + circle_0['y']
+        x_0 = radius * cos(theta + radian_dir * pi/2) + circle_0['x']
+        y_0 = radius * sin(theta + radian_dir * pi/2) + circle_0['y']
         
         # Point on destination circle
-        x_1 = radius * cos(theta + -1 * x_dir * pi/2) + circle_1['x']
-        y_1 = radius * sin(theta + -1 * x_dir * pi/2) + circle_1['y']
+        x_1 = radius * cos(theta + radian_dir * pi/2) + circle_1['x']
+        y_1 = radius * sin(theta + radian_dir * pi/2) + circle_1['y']
         
         plot_line(x_0,y_0,x_1,y_1,color)
         
@@ -207,6 +207,21 @@ class DubiousCurves:
         return (left_circle,right_circle) 
         
     def calculate(self,radius,x_0,y_0,radians_0,x_1,y_1,radians_1):
+        """
+        Calculates the circle path and radius that needs to followed.
+        
+        Args:
+            radius: Radius of the circles in m.
+            x_0: X-coordinate of starting location.
+            y_0: X-coordinate of starting location.
+            radians_0: Direction that the rover is pointing in radians.
+            x_1: X-coordinate of destination.
+            y_1: X-coordinate of destination.
+            radians_1: Direction in radians that the rover is pointing at the
+                destination.
+        Returns:
+            Path to be followed.
+        """
         src = self.tangent_circles(radius,x_0,y_0,radians_0)
         dest = self.tangent_circles(radius,x_1,y_1,radians_1)
         
