@@ -14,7 +14,8 @@ Notes:
         atan2(-1,-1) = -3pi/4
 """
 import matplotlib.pyplot as plt     # For plotting
-from math import pi, sin, cos, atan2, acos, sqrt
+from matplotlib.patches import Wedge    # For sectors
+from math import pi, sin, cos, atan2, acos, sqrt, degrees
 
 # Plotting functions
 def plot_circle(circle, color='b'):
@@ -41,6 +42,21 @@ def plot_arrow(x,y,radians):
     arrow_length = 3
     ax.arrow(x, y, arrow_length * cos(radians), arrow_length * sin(radians),
         head_width=1, head_length=1, fc='k', ec='k')
+        
+def plot_sector(circle,start_radian,end_radian):
+    """
+    Plots a sector of a circle.
+    """
+    radius = circle['radius']
+    x = circle['x']
+    y = circle['y']
+    start_degree = degrees(start_radian)
+    end_degree = degrees(end_radian)
+    
+    
+    ax = plt.gca()
+    sector = Wedge((x,y),radius,start_degree,end_degree,color="g", fill=False)
+    ax.add_artist(sector)
 
 def plot(title="",figure_filename=None):
     ax = plt.gca()                  # Get current axis
@@ -252,6 +268,9 @@ class DubiousCurves:
         # Theta in radians
         theta = atan2( (y_1 - y_0) , (x_1 - x_0) )
         
+        # From here on this is hacky and should be fixed up to be more
+        # mathematically robust
+        
         # 0 = pos, 1 = neg
         first = None
         second = None
@@ -313,6 +332,7 @@ class DubiousCurves:
         plot_line(src[first]['x'],src[first]['y'],
             dest[second]['x'],dest[second]['y'])
         
+        plot_sector(src[first],0,3*pi/2)
         
         
         
