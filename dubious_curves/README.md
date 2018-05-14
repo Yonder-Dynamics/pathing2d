@@ -3,13 +3,13 @@
 ## Demo Images
 
 ### First Quadrant
-![first quadrant](images/first_quadrant.jpg)
+![first quadrant](images/first_quadrant.png)
 
 ### Second Quadrant
-![second quadrant](images/second_quadrant.jpg)
+![second quadrant](images/second_quadrant.png)
 
 ### Third Quadrant
-![third quadrant](images/third_quadrant.jpg)
+![third quadrant](images/third_quadrant.png)
 
 ### Fourth Quadrant
-![fourth quadrant](images/fourth_quadrant.jpg)
+![fourth quadrant](images/fourth_quadrant.png)
