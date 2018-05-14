@@ -5,7 +5,10 @@
 @email  simonfong6@gmail.com
 @date   12 May 2018
 
-Dubious Curves
+Dubious Curves for using curved path planning from a point and a trajectory to
+another point and trajectory. We do not use point turns because it can cause
+strain to the chasis and may not work on all terrains.
+
 
 Notes:
     Use atan2 instead of atan because it gives the correct angle.
