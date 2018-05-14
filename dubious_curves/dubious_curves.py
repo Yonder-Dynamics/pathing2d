@@ -73,13 +73,8 @@ class DubiousCurves:
         theta = atan2( (circle_1['y'] - circle_0['y']) ,
                        (circle_1['x'] - circle_0['x']) )
         
-        print("phi: {}pi".format(phi/pi))
-        
-        # True phi
+        # Sums both to get phi in comparison to x=0
         phi = phi + theta
-        
-        print("theta: {}pi".format(theta/pi))
-        print("sum phi: {}pi".format(phi/pi))
         
         # Point on source circle
         x_0 = radius * cos(phi) + circle_0['x']
@@ -154,6 +149,15 @@ class DubiousCurves:
     def tangent_circles(self,radius,x,y,radians):
         """
         Calculates the two tangent circles for a given point trajectory.
+        
+        Args:
+            radius: Radius of tangent circle.
+            x: X-coordinate of source point.
+            y: Y-coordinate of source point.
+            
+        Returns:
+            circles: Tuple of dictionaries that hold 'coordinates' as a tuple, 
+                '(x,y)' ,cand 'radius' as a float, '3.0'.
         """
     
         # Left circle
