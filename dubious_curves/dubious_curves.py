@@ -15,7 +15,8 @@ def plot_circle(circle, color='b'):
     """
     Plots a circle.
     """
-    circle_plt = plt.Circle((circle['x'], circle['y']), circle['radius'], color=color, fill=False)
+    circle_plt = plt.Circle((circle['x'], circle['y']), 
+        circle['radius'], color=color, fill=False)
     ax = plt.gca()
     ax.add_artist(circle_plt)
     
@@ -47,14 +48,14 @@ class DubiousCurves:
     def __init__(self):
         pass
         
-    def tangent_line_inner(self,circle_0,circle_1, x_dir):
+    def tangent_line_inner(self,circle_0,circle_1, radian_dir, color='ro-'):
         """
         Calculates inner tangent line points for two circles.
         
         Args:
             circle_0: Source circle.
             circle_1: Destination circle.
-            x_dir: -1 or 1, left tangent if -1, right tangent otherwise.
+            radian_dir: Negative radianed circle if -1, positive if 1.
             
         Returns:
             A tuple of tuples that represent an inner tangent.
@@ -66,31 +67,31 @@ class DubiousCurves:
         distance = sqrt( (circle_1['y'] - circle_0['y'])**2 + 
                          (circle_1['x'] - circle_0['x'])**2 )
         
-        # Angle between radius and line connecting centers                 
-        phi = acos( radius / (distance/2) )
+        # Relative angle between radius and center lines                 
+        rel_phi = acos( radius / (distance/2) )
         
         # Angle in radians of line connecting centers
         theta = atan2( (circle_1['y'] - circle_0['y']) ,
                        (circle_1['x'] - circle_0['x']) )
         
         # Sums both to get phi in comparison to x=0
-        phi = phi + theta
+        abs_phi = rel_phi +  theta
         
         # Point on source circle
-        x_0 = radius * cos(phi) + circle_0['x']
-        y_0 = radius * sin(phi) + circle_0['y']
+        x_0 = radius * cos(abs_phi) + circle_0['x']
+        y_0 = radius * sin(abs_phi) + circle_0['y']
         
         # Point on destination circle
-        x_1 = radius * cos(pi + phi) + circle_1['x']
-        y_1 = radius * sin(pi + phi) + circle_1['y']
+        x_1 = radius * cos(pi + abs_phi) + circle_1['x']
+        y_1 = radius * sin(pi + abs_phi) + circle_1['y']
         
-        plot_line(x_0,y_0,x_1,y_1)
+        plot_line(x_0,y_0,x_1,y_1,color)
         
         
         return ((x_0,y_0),(x_1,y_1))
         
     
-    def tangent_line_outer(self,circle_0,circle_1, x_dir):
+    def tangent_line_outer(self,circle_0,circle_1, x_dir, color='ro-'):
         """
         Calculates outer tangent line points for two circles.
         
@@ -117,7 +118,7 @@ class DubiousCurves:
         x_1 = radius * cos(theta + -1 * x_dir * pi/2) + circle_1['x']
         y_1 = radius * sin(theta + -1 * x_dir * pi/2) + circle_1['y']
         
-        plot_line(x_0,y_0,x_1,y_1)
+        plot_line(x_0,y_0,x_1,y_1,color)
         
         return ((x_0,y_0),(x_1,y_1))
         
@@ -137,7 +138,9 @@ class DubiousCurves:
                 and 'radius' as a float, '3.0'.
         """
         # Tangent circle
-        x_cir = x + x_dir * radius * sin(radian)  # x_cir = x + -1 * r * sin(theta)
+        x_cir = x + x_dir * radius * sin(radian)  
+        # x_cir = x + -1 * r * sin(theta)
+        
         y_cir = y - x_dir * radius * cos(radian)
         
         circle = {'x': x_cir,
@@ -199,11 +202,12 @@ class DubiousCurves:
             second = 1
         
         
-        #self.tangent_line_outer(src[first],dest[second],-1)
-        #self.tangent_line_outer(src[first],dest[second],1)
-        self.tangent_line_inner(src[first],dest[second],-1)
-        self.tangent_line_inner(src[first],dest[second],1)
-        plot_line(src[first]['x'],src[first]['y'],dest[second]['x'],dest[second]['y'])
+        self.tangent_line_outer(src[first],dest[second],-1,'bo-')
+        self.tangent_line_outer(src[first],dest[second],1,'bo-')
+        self.tangent_line_inner(src[first],dest[second],-1,'go-')
+        self.tangent_line_inner(src[first],dest[second],1,'go-')
+        plot_line(src[first]['x'],src[first]['y'],
+            dest[second]['x'],dest[second]['y'])
         
         
         
