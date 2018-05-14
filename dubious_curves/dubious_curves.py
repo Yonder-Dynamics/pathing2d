@@ -47,10 +47,11 @@ def plot(title="",figure_filename=None):
     ax.axis('equal')                # Makes circles actually look like circles
     plt.axis([-20, 20, -20, 20])    # Window size.
     plt.title(title)
-    plt.show()                      # Show plots on screen.
     if(figure_filename is not None):
         plt.savefig(figure_filename)
         print("Saved figure to {}".format(figure_filename))
+    plt.show()                      # Show plots on screen.
+    
         
 # END Plotting functions
 
