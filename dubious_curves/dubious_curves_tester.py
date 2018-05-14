@@ -30,7 +30,7 @@ class DubiousCurvesTester(unittest.TestCase):
 
         num = dc.calculate(radius,x_0,y_0,radians_0,x_1,y_1,radians_1)
         
-        file_name = 'first_quadrant.jpg'
+        file_name = 'first_quadrant.png'
         final_path = path.join(IMAGE_DIR,file_name)
         plot("First Quadrant", final_path)
 
@@ -49,7 +49,7 @@ class DubiousCurvesTester(unittest.TestCase):
 
         num = dc.calculate(radius,x_0,y_0,radians_0,x_1,y_1,radians_1)
         
-        file_name = 'second_quadrant.jpg'
+        file_name = 'second_quadrant.png'
         final_path = path.join(IMAGE_DIR,file_name)
         plot("Second  Quadrant", final_path)
      
@@ -68,7 +68,7 @@ class DubiousCurvesTester(unittest.TestCase):
 
         num = dc.calculate(radius,x_0,y_0,radians_0,x_1,y_1,radians_1)
         
-        file_name = 'third_quadrant.jpg'
+        file_name = 'third_quadrant.png'
         final_path = path.join(IMAGE_DIR,file_name)
         plot("Third  Quadrant", final_path)
         
@@ -87,7 +87,7 @@ class DubiousCurvesTester(unittest.TestCase):
 
         num = dc.calculate(radius,x_0,y_0,radians_0,x_1,y_1,radians_1)
     
-        file_name = 'fourth_quadrant.jpg'
+        file_name = 'fourth_quadrant.png'
         final_path = path.join(IMAGE_DIR,file_name)
         plot("Fourth  Quadrant", final_path)
         
