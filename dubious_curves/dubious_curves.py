@@ -146,7 +146,7 @@ class DubiousCurves:
         
         return ((x_0,y_0),(x_1,y_1))
         
-    def tangent_circle(self,radius,x,y,radian,x_dir):
+    def tangent_circle(self,radius,x,y,radian,radian_dir):
         """
         Calculates tangent coordinates for a tangent circle.
         
@@ -154,18 +154,20 @@ class DubiousCurves:
             radius: Radius of tangent circle.
             x: X-coordinate of source point.
             y: Y-coordinate of source point.
-            x_dir: -1 or 1, left circle if -1, right circle otherwise
+            radian_dir: Determines whether circle will be positive radian side.
             
 
         Returns:
             circle: Dictionary that holds 'coordinates' as a tuple, '(x,y)' ,
                 and 'radius' as a float, '3.0'.
         """
-        # Tangent circle
-        x_cir = x + x_dir * radius * sin(radian)  
-        # x_cir = x + -1 * r * sin(theta)
         
-        y_cir = y - x_dir * radius * cos(radian)
+        # x_cir = x + r * cos(theta +/- pi/2)
+        x_cir = x + radius * cos(radian - radian_dir * pi/2)
+        
+        # y_cir = y + r * sin(theta +/- pi/2)
+        y_cir = y + radius * sin(radian - radian_dir * pi/2)
+        
         
         circle = {'x': x_cir,
                   'y': y_cir,
