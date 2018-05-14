@@ -38,7 +38,8 @@ def plot_arrow(x,y,radians):
     Plots an arrow at given point and in given direction.
     """
     ax = plt.gca()
-    ax.arrow(x, y, cos(radians), sin(radians),
+    arrow_length = 3
+    ax.arrow(x, y, arrow_length * cos(radians), arrow_length * sin(radians),
         head_width=1, head_length=1, fc='k', ec='k')
 
 def plot():
@@ -53,6 +54,25 @@ class DubiousCurves:
     
     def __init__(self):
         pass
+        
+    def circle_to_circle_angle(self,circle_src,circle_dest):
+        """
+        Calculates the angle from the center of one circle to the center of
+        another. Helper function.
+        
+        Args:
+            circle_src: Dictionary for the source circle.
+            circle_dest: Dictionary for the destination circle.
+            
+        Returns:
+            double: Angle in radians.
+        """
+        
+        # Angle in radians of line connecting centers
+        theta = atan2( (circle_dest['y'] - circle_src['y']) ,
+                       (circle_dest['x'] - circle_src['x']) )
+                       
+        return theta
         
     def tangent_line_inner(self,circle_0,circle_1, radian_dir, color='ro-'):
         """
@@ -77,8 +97,7 @@ class DubiousCurves:
         rel_phi = acos( radius / (distance/2) )
         
         # Angle in radians of line connecting centers
-        theta = atan2( (circle_1['y'] - circle_0['y']) ,
-                       (circle_1['x'] - circle_0['x']) )
+        theta = self.circle_to_circle_angle(circle_0,circle_1)
         
         # Sums both to get phi in comparison to x=0
         abs_phi = theta + radian_dir * rel_phi
@@ -113,8 +132,7 @@ class DubiousCurves:
         radius = circle_0['radius']
     
         # Theta in radians
-        theta = atan2( (circle_1['y'] - circle_0['y']) ,
-                       (circle_1['x'] - circle_0['x']) )
+        theta = self.circle_to_circle_angle(circle_0,circle_1)
         
         # Point on source circle
         x_0 = radius * cos(theta + -1 * x_dir * pi/2) + circle_0['x']
@@ -207,6 +225,21 @@ class DubiousCurves:
         else:
             second = 1
         
+        """
+        Pos on circle: pi/2
+        Dir: 0
+        3pi/2,pi
+        Lets call this negative bc u take the pos on circle - pi/2
+        4 tangent lines locations and slopes
+        pi/4,-pi/4 Yes
+        ?,?         Yes
+        ?,?         No
+        -3pi/4,-pi/4 No
+        Eliminate all tangents on circle that aren't possible for this
+        direction.
+        
+        """
+        
         
         self.tangent_line_outer(src[first],dest[second],-1,'bo-')
         self.tangent_line_outer(src[first],dest[second],1,'bo-')
@@ -231,10 +264,10 @@ def main():
     
     x_0 = 0
     y_0 = 0
-    radians_0 = -pi/2
+    radians_0 = -pi/4
     
-    x_1 = -10
-    y_1 = 10
+    x_1 = -8
+    y_1 = 8
     radians_1 = 0
     
     num = dc.calculate(radius,x_0,y_0,radians_0,x_1,y_1,radians_1)
