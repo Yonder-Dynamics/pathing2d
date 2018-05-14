@@ -42,12 +42,15 @@ def plot_arrow(x,y,radians):
     ax.arrow(x, y, arrow_length * cos(radians), arrow_length * sin(radians),
         head_width=1, head_length=1, fc='k', ec='k')
 
-def plot(title=""):
+def plot(title="",figure_filename=None):
     ax = plt.gca()                  # Get current axis
     ax.axis('equal')                # Makes circles actually look like circles
     plt.axis([-20, 20, -20, 20])    # Window size.
     plt.title(title)
     plt.show()                      # Show plots on screen.
+    if(figure_filename is not None):
+        plt.savefig(figure_filename)
+        print("Saved figure to {}".format(figure_filename))
         
 # END Plotting functions
 
