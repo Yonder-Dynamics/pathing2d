@@ -74,7 +74,7 @@ class DubiousCurves:
                        
         return theta
         
-    def line_angle(self,x_src,y_src,x_dest,y_dest):
+    def line_angle(self,line):
         """
         Calculates the angle from one point to another. Helper function.
         
@@ -89,7 +89,7 @@ class DubiousCurves:
         """
         
         # Angle in radians
-        theta = atan2( (y_dest - y_src) , (x_dest - x_src) )
+        theta = atan2( (line[1][1] - line[0][1]) , (line[1][0] - line[0][0]) )
                        
         return theta
         
@@ -182,10 +182,10 @@ class DubiousCurves:
         """
         
         # x_cir = x + r * cos(theta +/- pi/2)
-        x_cir = x + radius * cos(radian - radian_dir * pi/2)
+        x_cir = x + radius * cos(radian + radian_dir * pi/2)
         
         # y_cir = y + r * sin(theta +/- pi/2)
-        y_cir = y + radius * sin(radian - radian_dir * pi/2)
+        y_cir = y + radius * sin(radian + radian_dir * pi/2)
         
         
         circle = {'x': x_cir,
@@ -209,10 +209,10 @@ class DubiousCurves:
         """
     
         # Left circle
-        left_circle  = self.tangent_circle(radius,x,y,radians,-1)
+        left_circle  = self.tangent_circle(radius,x,y,radians,1)
         
         # Right circle
-        right_circle  = self.tangent_circle(radius,x,y,radians,1)
+        right_circle  = self.tangent_circle(radius,x,y,radians,-1)
         
         # Plotting
         plt.plot(x,y,'b.')      # Tangent point
@@ -247,7 +247,7 @@ class DubiousCurves:
         # Theta in radians
         theta = atan2( (y_1 - y_0) , (x_1 - x_0) )
         
-        # 0 = left, 1 = right
+        # 0 = pos, 1 = neg
         first = None
         second = None
         
@@ -274,13 +274,23 @@ class DubiousCurves:
         Eliminate all tangents on circle that aren't possible for this
         direction.
         
+        OR
+        cir_dir = +
+        theta = -
+        
         """
         
         
         tang1 = self.tangent_line_outer(src[first],dest[second],-1,'bo-')
-        tang2 = self.tangent_line_outer(src[first],dest[second],1,'bo-')
-        tang3 = self.tangent_line_inner(src[first],dest[second],-1,'go-')
+        tang2 = self.tangent_line_outer(src[first],dest[second],1,'go-')
+        tang3 = self.tangent_line_inner(src[first],dest[second],-1,'bo-')
         tang4 = self.tangent_line_inner(src[first],dest[second],1,'go-')
+        tangs = [tang1,tang2,tang3,tang4]
+        
+        for i in range(4):
+            angle = self.line_angle(tangs[i])
+            print(angle)
+        
         plot_line(src[first]['x'],src[first]['y'],
             dest[second]['x'],dest[second]['y'])
         
@@ -302,9 +312,9 @@ def main():
     y_0 = 0
     radians_0 = -pi/4
     
-    x_1 = -8
+    x_1 = 8
     y_1 = 8
-    radians_1 = 0
+    radians_1 = pi
     
     num = dc.calculate(radius,x_0,y_0,radians_0,x_1,y_1,radians_1)
     print(num)
