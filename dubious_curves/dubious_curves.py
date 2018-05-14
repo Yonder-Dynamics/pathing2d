@@ -42,10 +42,11 @@ def plot_arrow(x,y,radians):
     ax.arrow(x, y, arrow_length * cos(radians), arrow_length * sin(radians),
         head_width=1, head_length=1, fc='k', ec='k')
 
-def plot():
+def plot(title=""):
     ax = plt.gca()                  # Get current axis
     ax.axis('equal')                # Makes circles actually look like circles
     plt.axis([-20, 20, -20, 20])    # Window size.
+    plt.title(title)
     plt.show()                      # Show plots on screen.
         
 # END Plotting functions
@@ -275,21 +276,28 @@ class DubiousCurves:
         direction.
         
         OR
-        cir_dir = +
-        theta = -
+        left circle = +
+        right_circle -
+        if left choose -
         
         """
+        first1 = None
+        if(first == 0):
+            first1 = -1
+        else:
+            first1 = 1
         
         
-        tang1 = self.tangent_line_outer(src[first],dest[second],-1,'bo-')
-        tang2 = self.tangent_line_outer(src[first],dest[second],1,'go-')
-        tang3 = self.tangent_line_inner(src[first],dest[second],-1,'bo-')
-        tang4 = self.tangent_line_inner(src[first],dest[second],1,'go-')
-        tangs = [tang1,tang2,tang3,tang4]
-        
-        for i in range(4):
-            angle = self.line_angle(tangs[i])
-            print(angle)
+        if(second == 0):
+            tang1 = self.tangent_line_outer(src[first],
+                dest[second],first1,'bo-')
+            tang2 = self.tangent_line_outer(src[first],
+                dest[second],first1,'go-')
+        else:
+            tang3 = self.tangent_line_inner(src[first],
+                dest[second],first1,'bo-')
+            tang4 = self.tangent_line_inner(src[first],
+                dest[second],first1,'go-')
         
         plot_line(src[first]['x'],src[first]['y'],
             dest[second]['x'],dest[second]['y'])
