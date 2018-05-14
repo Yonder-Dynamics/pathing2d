@@ -8,8 +8,11 @@
 Dubious Curves Tester
 """
 import unittest
+from os import path
 from math import pi, sin, cos, atan2, acos, sqrt
 from dubious_curves import DubiousCurves, plot
+
+IMAGE_DIR= 'images'
 
 class DubiousCurvesTester(unittest.TestCase):
     def test_first_quadrant(self):
@@ -26,8 +29,10 @@ class DubiousCurvesTester(unittest.TestCase):
         radians_1 = pi
 
         num = dc.calculate(radius,x_0,y_0,radians_0,x_1,y_1,radians_1)
-
-        plot("First Quadrant")
+        
+        file_name = 'first_quadrant.jpg'
+        final_path = path.join(IMAGE_DIR,file_name)
+        plot("First Quadrant", final_path)
 
     def test_second_quadrant(self):
         dc = DubiousCurves()
@@ -43,7 +48,10 @@ class DubiousCurvesTester(unittest.TestCase):
         radians_1 = pi
 
         num = dc.calculate(radius,x_0,y_0,radians_0,x_1,y_1,radians_1)
-        plot("Second  Quadrant")
+        
+        file_name = 'second_quadrant.jpg'
+        final_path = path.join(IMAGE_DIR,file_name)
+        plot("Second  Quadrant", final_path)
      
     def test_third_quadrant(self):
         dc = DubiousCurves()
@@ -59,7 +67,10 @@ class DubiousCurvesTester(unittest.TestCase):
         radians_1 = pi
 
         num = dc.calculate(radius,x_0,y_0,radians_0,x_1,y_1,radians_1)
-        plot("Third  Quadrant")
+        
+        file_name = 'third_quadrant.jpg'
+        final_path = path.join(IMAGE_DIR,file_name)
+        plot("Third  Quadrant", final_path)
         
     def test_fourth_quadrant(self):
         dc = DubiousCurves()
@@ -76,7 +87,9 @@ class DubiousCurvesTester(unittest.TestCase):
 
         num = dc.calculate(radius,x_0,y_0,radians_0,x_1,y_1,radians_1)
     
+        file_name = 'fourth_quadrant.jpg'
+        final_path = path.join(IMAGE_DIR,file_name)
+        plot("Fourth  Quadrant", final_path)
         
-        plot("Fourth  Quadrant")
 if(__name__ == '__main__'):
     unittest.main()
