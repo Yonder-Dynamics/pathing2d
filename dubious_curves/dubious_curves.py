@@ -6,6 +6,12 @@
 @date   12 May 2018
 
 Dubious Curves
+
+Notes:
+    Use atan2 instead of atan because it gives the correct angle.
+    Ex:
+        atan(-1/-1) = pi/4
+        atan2(-1,-1) = -3pi/4
 """
 import matplotlib.pyplot as plt     # For plotting
 from math import pi, sin, cos, atan2, acos, sqrt
