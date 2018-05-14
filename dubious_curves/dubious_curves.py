@@ -8,7 +8,7 @@
 Dubious Curves
 """
 import matplotlib.pyplot as plt     # For plotting
-from math import pi, sin, cos, atan, acos, sqrt
+from math import pi, sin, cos, atan2, acos, sqrt
 
 # Plotting functions
 def plot_circle(circle, color='b'):
@@ -54,7 +54,10 @@ class DubiousCurves:
         Args:
             circle_0: Source circle.
             circle_1: Destination circle.
-            x_dir: -1 or 1, left tangent if -1, right tangent otherwise
+            x_dir: -1 or 1, left tangent if -1, right tangent otherwise.
+            
+        Returns:
+            A tuple of tuples that represent an inner tangent.
         """
         # Radius is the same for both circles.
         radius = circle_0['radius']
@@ -67,13 +70,16 @@ class DubiousCurves:
         phi = acos( radius / (distance/2) )
         
         # Angle in radians of line connecting centers
-        theta = atan( (circle_1['y'] - circle_0['y']) / (circle_1['x'] - circle_0['x']) )
+        theta = atan2( (circle_1['y'] - circle_0['y']) ,
+                       (circle_1['x'] - circle_0['x']) )
+        
+        print("phi: {}pi".format(phi/pi))
         
         # True phi
         phi = phi + theta
         
         print("theta: {}pi".format(theta/pi))
-        print("phi: {}pi".format(phi/pi))
+        print("sum phi: {}pi".format(phi/pi))
         
         # Point on source circle
         x_0 = radius * cos(phi) + circle_0['x']
@@ -96,14 +102,17 @@ class DubiousCurves:
         Args:
             circle_0: Source circle.
             circle_1: Destination circle.
-            x_dir: -1 or 1, left tangent if -1, right tangent otherwise
+            x_dir: -1 or 1, left tangent if -1, right tangent otherwise.
+        Returns:
+            A tuple of tuples that represent an outer tangent.
         """
         
         # Radius is the same for both circles.
         radius = circle_0['radius']
     
         # Theta in radians
-        theta = atan( (circle_1['y'] - circle_0['y']) / (circle_1['x'] - circle_0['x']) )
+        theta = atan2( (circle_1['y'] - circle_0['y']) ,
+                       (circle_1['x'] - circle_0['x']) )
         
         # Point on source circle
         x_0 = radius * cos(theta + -1 * x_dir * pi/2) + circle_0['x']
@@ -169,7 +178,7 @@ class DubiousCurves:
         dest = self.tangent_circles(radius,x_1,y_1,radians_1)
         
         # Theta in radians
-        theta = atan( (y_1 - y_0) / (x_1 - x_0) )
+        theta = atan2( (y_1 - y_0) , (x_1 - x_0) )
         
         # 0 = left, 1 = right
         first = None
