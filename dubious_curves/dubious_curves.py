@@ -74,6 +74,25 @@ class DubiousCurves:
                        
         return theta
         
+    def line_angle(self,x_src,y_src,x_dest,y_dest):
+        """
+        Calculates the angle from one point to another. Helper function.
+        
+        Args:
+            x_src: X-coordinate of starting location.
+            y_src: X-coordinate of starting location.
+            x_dest: X-coordinate of destination.
+            y_dest: X-coordinate of destination.
+            
+        Returns:
+            double: Angle in radians.
+        """
+        
+        # Angle in radians
+        theta = atan2( (y_dest - y_src) , (x_dest - x_src) )
+                       
+        return theta
+        
     def tangent_line_inner(self,circle_0,circle_1, radian_dir, color='ro-'):
         """
         Calculates inner tangent line points for two circles.
@@ -258,10 +277,10 @@ class DubiousCurves:
         """
         
         
-        self.tangent_line_outer(src[first],dest[second],-1,'bo-')
-        self.tangent_line_outer(src[first],dest[second],1,'bo-')
-        self.tangent_line_inner(src[first],dest[second],-1,'go-')
-        self.tangent_line_inner(src[first],dest[second],1,'go-')
+        tang1 = self.tangent_line_outer(src[first],dest[second],-1,'bo-')
+        tang2 = self.tangent_line_outer(src[first],dest[second],1,'bo-')
+        tang3 = self.tangent_line_inner(src[first],dest[second],-1,'go-')
+        tang4 = self.tangent_line_inner(src[first],dest[second],1,'go-')
         plot_line(src[first]['x'],src[first]['y'],
             dest[second]['x'],dest[second]['y'])
         
