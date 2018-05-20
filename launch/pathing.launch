@@ -1,0 +1,11 @@
+<launch>
+  <node pkg="pathing2d" type="pathing2d_node" name="pathing2d" output="screen">
+    <param name="resolution" value="0.5" />
+    <param name="maxBump" value="4" />
+    <param name="maxSteepness" value="3" />
+    <param name="dangerOfUnknown" value="5.1" />
+    <param name="roverConnectionRad" value="4" />
+    <param name="goalConnectionRad" value="2" />
+    <param name="robotRadius" value="2.5" />
+  </node>
+</launch>

@@ -32,22 +32,9 @@ class Pathing2D {
   geometry_msgs::Pose goal, rover;
   ros::Publisher traj_pub, map_pub;
   public:
-    float res, maxBumpiness, robotRadius, dangerOfUnknown, roughnessWeight, steepnessWeight, maxSteepness;
+    float res, maxBumpiness, robotRadius, dangerOfUnknown, roughnessWeight, steepnessWeight, maxSteepness, roverConnectionRad, goalConnectionRad, interConnectionRad;
     int maxEdges;
-
-    Pathing2D(ros::NodeHandle n, float res, float maxBumpiness, float robotRadius,
-              float dangerOfUnknown, float roughnessWeight,
-              float steepnessWeight, float maxSteepness, int maxEdges,
-              std::string frame_id) :
-      gotOcto(false), gotGoal(false), gotRover(true), isProcessing(false),
-      res(res), maxBumpiness(maxBumpiness),
-      robotRadius(robotRadius), dangerOfUnknown(dangerOfUnknown),
-      roughnessWeight(roughnessWeight), steepnessWeight(steepnessWeight),
-      maxSteepness(maxSteepness), maxEdges(maxEdges), frame_id(frame_id) {
-      traj_pub = n.advertise<nav_msgs::Path>("trajectory", 4);
-      map_pub = n.advertise<nav_msgs::OccupancyGrid>("occupancy_grid", 4);
-    };
-
+    Pathing2D(ros::NodeHandle n);
     void poseCallback(const nav_msgs::Odometry::ConstPtr& msg);
     void goalCallback(const geometry_msgs::PoseStamped::ConstPtr& msg);
     void octomapCallback(const octomap_msgs::Octomap::ConstPtr& msg);
@@ -62,14 +49,7 @@ class Pathing2D {
         const cv::Mat & heightHist,
         const cv::Mat & occupancy,
         std::vector<WeightedPoint> & openPoses, // output
-        cv::Mat * graphIndexes, // output
-        float roverConnectionRad,
-        float maxBumpiness,
-        float roughnessWeight,
-        float steepnessWeight,
-        float maxSteepness,
-        float maxLength,
-        int maxEdges);
+        cv::Mat * graphIndexes);
 
     nav_msgs::OccupancyGrid cvToGrid(const  cv::Mat & mat);
 };

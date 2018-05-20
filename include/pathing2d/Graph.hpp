@@ -202,6 +202,7 @@ std::vector<size_t> Graph<T>::shortestPath(size_t src, size_t goal,
       openSet.push(make_pair(x.first, tentative_score + heuristic(x.first, goal, points)));
     }
   }
+  std::cout << "Failed to reach goal" << std::endl;
   current = closedSetQ.top().first;
   return reconstruct_path(cameFrom, current);
 }

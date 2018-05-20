@@ -11,6 +11,7 @@
 #include <nav_msgs/Odometry.h>
 #include <nav_msgs/Path.h>
 #include <nav_msgs/OccupancyGrid.h>
+#include <Eigen/Geometry>
 
 #include <iostream>
 #include <cmath>
@@ -21,9 +22,43 @@
 #include <pathing2d/Pathing2D.h>
 #include <pathing2d/util.h>
 
+Pathing2D::Pathing2D(ros::NodeHandle n) :
+  gotOcto(false), gotGoal(false), gotRover(false), isProcessing(false)
+{
+  frame_id = "map";
+  maxEdges = 100000;
+  res = .2;
+  maxBumpiness = 3;
+  robotRadius = .15;
+  dangerOfUnknown = 4; // use high value to prevent all unknown locations from being checked
+  roughnessWeight = .5;
+  steepnessWeight = 1;
+  maxSteepness = 3;
+  roverConnectionRad = 3;
+
+  // Retrieve params
+  ros::param::get("~maxEdge", maxEdges);
+  ros::param::get("~resolution", res);
+  ros::param::get("~maxBump", maxBumpiness);
+  ros::param::get("~robotRadius", robotRadius);
+  ros::param::get("~dangerOfUnknown", dangerOfUnknown);
+  ros::param::get("~roughnessWeight", roughnessWeight);
+  ros::param::get("~steepnessWeight", steepnessWeight);
+  ros::param::get("~maxSteepness", maxSteepness);
+  ros::param::get("~frame_id", frame_id);
+
+  goalConnectionRad = 6*res;
+  interConnectionRad = (robotRadius > res) ? robotRadius : robotRadius+sqrt(2*res*res);
+  ros::param::get("~goalConnectionRad", goalConnectionRad);
+  ros::param::get("~interConnectionRad", interConnectionRad);
+  ros::param::get("~roverConnectionRad", roverConnectionRad);
+
+  traj_pub = n.advertise<nav_msgs::Path>("trajectory", 4);
+  map_pub = n.advertise<nav_msgs::OccupancyGrid>("occupancy_grid", 4);
+};
+
 void Pathing2D::poseCallback(const nav_msgs::Odometry::ConstPtr& msg) {
   if (!isProcessing) {
-    std::cout << "Recieved pose" << std::endl;
     rover = msg->pose.pose;
     gotRover = true;
     if (gotOcto && gotGoal && !isProcessing)
@@ -33,7 +68,6 @@ void Pathing2D::poseCallback(const nav_msgs::Odometry::ConstPtr& msg) {
 
 void Pathing2D::goalCallback(const geometry_msgs::PoseStamped::ConstPtr& msg) {
   if (!isProcessing) {
-    std::cout << "Recieved goal" << std::endl;
     goal = msg->pose;
     gotGoal = true;
     if (gotOcto && gotRover && !isProcessing)
@@ -43,7 +77,6 @@ void Pathing2D::goalCallback(const geometry_msgs::PoseStamped::ConstPtr& msg) {
 
 void Pathing2D::octomapCallback(const octomap_msgs::Octomap::ConstPtr& msg) {
   if (!isProcessing) {
-    std::cout << "Recieved octomap" << std::endl;
     octomap::AbstractOcTree* atree = octomap_msgs::binaryMsgToMap(*msg);
     tree = boost::make_shared<octomap::OcTree>(*(octomap::OcTree *)atree);
     gotOcto = true;
@@ -67,6 +100,7 @@ cv::Mat Pathing2D::processOctomap(cv::Mat * unknown) {
   oy = ((oy + my)/2) - 5;
   oz = ((oz + mz)/2) - 5;
   */
+
   octomath::Vector3 first(ox, oy, oz);
   octomath::Vector3 second(mx, my, mz);
 
@@ -83,7 +117,7 @@ cv::Mat Pathing2D::processOctomap(cv::Mat * unknown) {
       int(ceil((maxP.x()-minP.x()+2)/res))+1, int(ceil((maxP.y()-minP.y()+2)/res))+1, 0, 0);
 
   // Fill
-  for(auto it = tree->begin_leafs_bbx(min, max, 16); it != tree->end_leafs_bbx(); it++) {
+  for(auto it = tree->begin_leafs_bbx(min, max); it != tree->end_leafs_bbx(); it++) {
     octomath::Vector3 pos = it.getCoordinate();
     int x = int((pos.x()-minP.x()+1)/res);
     int y = int((pos.y()-minP.y()+1)/res);
@@ -99,7 +133,7 @@ cv::Mat Pathing2D::processOctomap(cv::Mat * unknown) {
   empty.findExtrema(&emp_min, &emp_max, &unknownEmp, dangerOfUnknown);
   cv::Mat hist = cv::min(occ_max, emp_min);
   cv::bitwise_and(unknownOcc, unknownEmp, *unknown);
-  //cv::Mat hist = occ_max/2 + emp_min/2;
+
   /* Display things
   cv::namedWindow("Hist", 0);
   cv::Mat bw;
@@ -113,6 +147,7 @@ cv::Mat Pathing2D::processOctomap(cv::Mat * unknown) {
   cv::imshow("Hist", bw);
   cv::waitKey(0);
   */
+
   return hist;
 }
 
@@ -120,15 +155,9 @@ Graph<float> Pathing2D::buildGraph(
     const cv::Mat & heightHist,
     const cv::Mat & occupancy,
     std::vector<WeightedPoint> & openPoses,
-    cv::Mat * graphIndexes,
-    float roverConnectionRad,
-    float maxBumpiness,
-    float roughnessWeight,
-    float steepnessWeight,
-    float maxSteepness,
-    float maxLength,
-    int maxEdges)
+    cv::Mat * graphIndexes)
 {
+
   // Create positions filter by threshold
   *graphIndexes = -cv::Mat::ones(occupancy.rows, occupancy.cols, cv::DataType<int>::type);
   WeightedPoint src;
@@ -137,6 +166,7 @@ Graph<float> Pathing2D::buildGraph(
   src.z = rover.position.z;
   src.weight = 0;
   openPoses.push_back(src);
+
   for (int i=0; i<occupancy.rows; i++) {
     for (int j=0; j<occupancy.cols; j++) {
       // Exponentiate threshold to match occupationHist
@@ -144,13 +174,14 @@ Graph<float> Pathing2D::buildGraph(
         WeightedPoint p;
         p.x = j * res + ox - 1;
         p.y = i * res + oy - 1;
-        p.z = heightHist.at<float>(i, j);
+        p.z = heightHist.at<float>(i, j)*res;
         p.weight = occupancy.at<float>(i,j);
         graphIndexes->at<int>(i, j) = openPoses.size();
         openPoses.push_back(p);
       }
     }
   }
+
   WeightedPoint end;
   end.x = goal.position.x;
   end.y = goal.position.y;
@@ -181,9 +212,12 @@ Graph<float> Pathing2D::buildGraph(
         if (goalWithinHist) {
           dist = dist2d(p1, goal.position);
           slope = abs(p1.z-goal.position.z)/dist;
-          g.addEdge(ind1, openPoses.size()-1,
-              dist + slope*steepnessWeight + p1.weight*roughnessWeight);
+          if (slope < maxSteepness && dist < goalConnectionRad) {
+            g.addEdge(ind1, openPoses.size()-1,
+                dist + slope*steepnessWeight + p1.weight*roughnessWeight);
+          }
         }
+
         // Add local edges to graph
         for (int dy=-1; dy<=1; dy++) {
           for (int dx=-1; dx<=1; dx++) {
@@ -198,7 +232,7 @@ Graph<float> Pathing2D::buildGraph(
               slope = abs(p1.z-p2.z)/dist;
               roughness = p1.weight/2+p2.weight/2;
 
-              if (dist < maxLength && slope < maxSteepness) {
+              if (slope < maxSteepness && dist < interConnectionRad) {
                 g.addEdge(ind1, ind2,
                     dist + slope*steepnessWeight + roughness*roughnessWeight);
               }
@@ -217,8 +251,8 @@ void Pathing2D::process() {
   std::cout << "Creating heightmap" << std::endl;
   cv::Mat unknown;
   cv::Mat rawHeight = processOctomap(&unknown);
-  /* Display
   cv::Mat bw;
+  /* Display
   cv::normalize(rawHeight, bw, 0, 255, 32, CV_8UC1);
   cv::namedWindow("Height", 0);
   cv::imshow("Height", bw);
@@ -233,7 +267,6 @@ void Pathing2D::process() {
   cv::Mat abs_grad_x, abs_grad_y;
 
   /// Preprocessing
-  //cv::medianBlur (rawHeight, edgeHist, 5);
   cv::GaussianBlur(rawHeight, edgeHist, cv::Size(3,3), 10, 10,
       cv::BORDER_CONSTANT);//, dangerOfUnknown);
 
@@ -305,14 +338,13 @@ void Pathing2D::process() {
   std::cout << "Building graph" << std::endl;
   std::vector<WeightedPoint> open;
   cv::Mat graphIndexes;
-  float maxLength = (robotRadius > res) ? robotRadius : robotRadius+sqrt(2*res*res);
-  Graph<float> g = buildGraph(rawHeight, occupationHist, open, &graphIndexes,
-      2, maxBumpiness, roughnessWeight, steepnessWeight, maxSteepness,
-      robotRadius, maxEdges);
+  Graph<float> g = buildGraph(rawHeight, occupationHist, open, &graphIndexes);
 
+  /*
   cv::namedWindow("GraphIndexes", 0);
   cv::imshow("GraphIndexes", graphIndexes);
   cv::waitKey(0);
+  */
 
   // Find path
   std::cout << "Finding shortest path" << std::endl;
@@ -320,6 +352,7 @@ void Pathing2D::process() {
   nav_msgs::Path path = construct(shortestPath, open);
   std::cout << path << std::endl;
   traj_pub.publish(path);
+  g.saveDotFile("graph.gv");
 
   isProcessing = false;
   std::cout << "Done" << std::endl;
@@ -335,34 +368,30 @@ nav_msgs::Path Pathing2D::construct(const std::vector<size_t> & path,
     pose.pose.position = nodes[path[i]];
     // Fancy calculation to determine orientation to goal
     // Or not
-    pose.pose.orientation.x = 0;
-    pose.pose.orientation.y = 0;
-    pose.pose.orientation.z = 0;
-    pose.pose.orientation.w = 1;
-    poses.push_back(pose);
-    if (path[i]==0) {
-      std::cout << pose << std::endl;
-    }
-
     /*
-    if (path[i] == nodes.size()+1) {
-      pose.pose = goal;
-      poses.push_back(pose);
-    } else if (path[i] != 0) {
-      pose.pose.position = nodes[path[i]-1];
-      // Fancy calculation to determine orientation to goal
-      // Or not
+    if (i > 0) {
+      float dx = nodes[path[i]].x - poses.back().pose.position.x;
+      float dy = nodes[path[i]].y - poses.back().pose.position.y;
+      float dz = nodes[path[i]].z - poses.back().pose.position.z;
+      Eigen::Quaternionf ori =
+        Eigen::AngleAxisf(atan2(dy, dx), Eigen::Vector3f::UnitZ()) *
+        Eigen::AngleAxisf(-atan2(dz, dx), Eigen::Vector3f::UnitY());
+      pose.pose.orientation.x = ori.x();
+      pose.pose.orientation.y = ori.y();
+      pose.pose.orientation.z = ori.z();
+      pose.pose.orientation.w = ori.w();
+    } else {
+      */
       pose.pose.orientation.x = 0;
       pose.pose.orientation.y = 0;
       pose.pose.orientation.z = 0;
       pose.pose.orientation.w = 1;
-      poses.push_back(pose);
-    } else {
-      pose.pose = rover;
-      poses.push_back(pose);
-    }
-    */
+    //}
+    poses.push_back(pose);
   }
+  // Define the 
+  //poses.front().pose.orientation = poses[1].pose.orientation;
+
   nav_msgs::Path path_msg;
   path_msg.poses = poses;
   path_msg.header.frame_id = frame_id;
