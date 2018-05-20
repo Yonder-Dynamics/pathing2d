@@ -32,7 +32,17 @@ class Pathing2D {
   geometry_msgs::Pose goal, rover;
   ros::Publisher traj_pub, map_pub;
   public:
-    float res, maxBumpiness, robotRadius, dangerOfUnknown, roughnessWeight, steepnessWeight, maxSteepness, roverConnectionRad, goalConnectionRad, interConnectionRad;
+    float res,
+          maxBumpiness,
+          robotRadius,
+          dangerOfUnknown,
+          roughnessWeight,
+          steepnessWeight,
+          maxSteepness,
+          roverConnectionRad,
+          goalConnectionRad,
+          interConnectionRad,
+          greed;
     int maxEdges;
     Pathing2D(ros::NodeHandle n);
     void poseCallback(const nav_msgs::Odometry::ConstPtr& msg);

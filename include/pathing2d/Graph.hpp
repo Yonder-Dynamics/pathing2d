@@ -38,7 +38,7 @@ class Graph {
   T heuristic(size_t src, size_t goal, std::vector<WeightedPoint> & points);
   void saveDotFile(std::string fname);
   std::vector<size_t> reconstruct_path(std::vector<size_t>& cameFrom, size_t current);
-  std::vector<size_t> shortestPath(size_t src, size_t goal,
+  std::vector<size_t> shortestPath(size_t src, size_t goal, float greed,
       std::vector<WeightedPoint> & points);
 };
 
@@ -131,7 +131,7 @@ T Graph<T>::heuristic(size_t src, size_t goal, std::vector<WeightedPoint> & poin
 
 template <typename T>
 // Prints shortest paths from src to all other vertices
-std::vector<size_t> Graph<T>::shortestPath(size_t src, size_t goal,
+std::vector<size_t> Graph<T>::shortestPath(size_t src, size_t goal, float greed,
     std::vector<WeightedPoint> & points)
 {
   // The set of currently discovered nodes that are not evaluated yet.
@@ -203,8 +203,18 @@ std::vector<size_t> Graph<T>::shortestPath(size_t src, size_t goal,
     }
   }
   std::cout << "Failed to reach goal" << std::endl;
-  current = closedSetQ.top().first;
-  return reconstruct_path(cameFrom, current);
+  int closestInd = 0;
+  float dist = exp(greed*heuristic(closestInd, goal, points)) + gScore[closestInd];
+  for (int i=0; i<size; i++) {
+    if (i!=src and i!=goal) {
+      float d = exp(greed*heuristic(i, goal, points)) + gScore[i];
+      if (d < dist) {
+        closestInd = i;
+        dist = d;
+      }
+    }
+  }
+  return reconstruct_path(cameFrom, closestInd);
 }
 
 template <typename T>

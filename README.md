@@ -1,3 +1,6 @@
+# Pathing2D
+Pathing2D is a pathfinding algorithm that takes an octomap as an input, converts it to a 2D map, and performs an A* search to find a path to the goal. It takes into account the height changes and optimizes the route both over distance and terrain difficulty. 
+
 # PCL Locate bug fix  
 If you are getting an issue with PCL not being found, try this:  
 ~~~~~~~~
@@ -8,10 +11,4 @@ Copy the directory containing that file and run:
 `catkin_make -DPCL_DIR=/usr/lib/x86_64-linux-gnu/cmake/pcl/  `
 
 # Todo 
-* Link all nodes to the current position to make sure there is an entry point
-* Figure out how to add constant border when filtering
-- Finish shortest path algo
-* Optimize by not including unknown nodes as possible locations
-* Add orientation to each position
-- Add parameter manager
-- Test :)
+- Add orientation to each position

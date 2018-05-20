@@ -23,7 +23,7 @@
 #include <pathing2d/util.h>
 
 Pathing2D::Pathing2D(ros::NodeHandle n) :
-  gotOcto(false), gotGoal(false), gotRover(false), isProcessing(false)
+  gotOcto(false), gotGoal(false), gotRover(true), isProcessing(false)
 {
   frame_id = "map";
   maxEdges = 100000;
@@ -35,6 +35,7 @@ Pathing2D::Pathing2D(ros::NodeHandle n) :
   steepnessWeight = 1;
   maxSteepness = 3;
   roverConnectionRad = 3;
+  greed = 5;
 
   // Retrieve params
   ros::param::get("~maxEdge", maxEdges);
@@ -46,6 +47,7 @@ Pathing2D::Pathing2D(ros::NodeHandle n) :
   ros::param::get("~steepnessWeight", steepnessWeight);
   ros::param::get("~maxSteepness", maxSteepness);
   ros::param::get("~frame_id", frame_id);
+  ros::param::get("~greed", greed);
 
   goalConnectionRad = 6*res;
   interConnectionRad = (robotRadius > res) ? robotRadius : robotRadius+sqrt(2*res*res);
@@ -348,7 +350,7 @@ void Pathing2D::process() {
 
   // Find path
   std::cout << "Finding shortest path" << std::endl;
-  std::vector<size_t> shortestPath = g.shortestPath(0, open.size()-1, open);
+  std::vector<size_t> shortestPath = g.shortestPath(0, open.size()-1, greed, open);
   nav_msgs::Path path = construct(shortestPath, open);
   std::cout << path << std::endl;
   traj_pub.publish(path);
