@@ -262,6 +262,25 @@ class DubiousCurves:
         # Return coordinates for two circles that are tangent to the line. 
         return (left_circle,right_circle) 
         
+    def pointsOnCircle(self, circle, radian_dir, start_angle, end_angle):
+        """
+        Returns a list containing the points along the circumference of the circle from the start angle to the end
+
+        Args:
+            circle: the circle to calculate the points from
+            start_angle: the starting angle to start the path from
+            end_angle: the end angle where the path should end
+        """
+        points = []
+        print(str(start_angle * 180 / pi) + "," + str(end_angle * 180 / pi))
+        i = start_angle
+        while i < end_angle:
+            x = circle['x'] + circle['radius'] * sin(i + radian_dir * pi/2)
+            y = circle['y'] + circle['radius'] * cos(i + radian_dir * pi/2)
+            points.append((x,y))
+            i += pi/8
+        return points
+
     def calculate(self,radius,x_0,y_0,radians_0,x_1,y_1,radians_1):
         """
         Calculates the circle path and radius that needs to followed.
@@ -269,10 +288,10 @@ class DubiousCurves:
         Args:
             radius: Radius of the circles in m.
             x_0: X-coordinate of starting location.
-            y_0: X-coordinate of starting location.
+            y_0: Y-coordinate of starting location.
             radians_0: Direction that the rover is pointing in radians.
             x_1: X-coordinate of destination.
-            y_1: X-coordinate of destination.
+            y_1: Y-coordinate of destination.
             radians_1: Direction in radians that the rover is pointing at the
                 destination.
         Returns:
@@ -281,6 +300,8 @@ class DubiousCurves:
         src = self.tangent_circles(radius,x_0,y_0,radians_0)
         dest = self.tangent_circles(radius,x_1,y_1,radians_1)
         
+        path = []
+
         # Theta in radians
         theta = atan2( (y_1 - y_0) , (x_1 - x_0) )
         
@@ -291,11 +312,13 @@ class DubiousCurves:
         first = None
         second = None
         
+        # Chooses between one of the tangent circles to use for start
         if(radians_0 < theta):
             first = 0
         else:
             first = 1
         
+        # Chooses between one of the tangent circles for the destination
         if(radians_1 > theta):
             second = 0
         else:
@@ -358,14 +381,21 @@ class DubiousCurves:
         start_radian %= 2*pi
         end_radian %= 2*pi
         plot_sector(dest[second],start_radian,end_radian)
-        print(start_radian,end_radian)
+        #print(start_radian,end_radian)
         
-        
-        return "GTFO"
-        
+        # Creates path by inputting a bunch of x,y tuples for the rover to follow
+        start = self.pointsOnCircle(src[first], first1, self.radian_on_circle(src[first],x_0,y_0) % (2*pi), self.radian_on_circle(src[first],tang[0][0],tang[0][1]) % (2*pi))
+        for i in start:
+            plt.plot(i[0], i[1], 'r+')
+            path.append(i)
+        path.append(tang[0])
+        path.append(tang[1])
+        #path.append()
 
+        print(path)
+        plot()
 
-    
+        return path
 
 def main():
     dc = DubiousCurves()
