@@ -348,12 +348,17 @@ class DubiousCurves:
         # Plot on start circle
         start_radian = self.radian_on_circle(src[first],x_0,y_0)
         end_radian = self.radian_on_circle(src[first],tang[0][0],tang[0][1])
-        plot_sector(src[first],start_radian,end_radian)
+        start_radian %= 2*pi
+        end_radian %= 2*pi
+        plot_sector(src[first],-pi/2,0)
         
         # Plot on end circle
         start_radian = self.radian_on_circle(dest[second],tang[1][0],tang[1][1])
         end_radian = self.radian_on_circle(dest[second],x_1,y_1)
+        start_radian %= 2*pi
+        end_radian %= 2*pi
         plot_sector(dest[second],start_radian,end_radian)
+        print(start_radian,end_radian)
         
         
         return "GTFO"
